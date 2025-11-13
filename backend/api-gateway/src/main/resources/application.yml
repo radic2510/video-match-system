@@ -1,0 +1,94 @@
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        # User routes - public endpoints
+        - id: user-register
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/register
+            - Method=POST
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+
+        - id: user-login
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/login
+            - Method=POST
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: userServiceCircuitBreaker
+
+        # User routes - authenticated
+        - id: user-profile
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/users/profile
+          filters:
+            - JwtAuthenticationFilter
+
+        # Advertisement routes - authenticated
+        - id: advertisements
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/advertisements/**
+          filters:
+            - JwtAuthenticationFilter
+
+        # Match routes - authenticated
+        - id: matches
+          uri: http://localhost:8081
+          predicates:
+            - Path=/api/matches/**
+          filters:
+            - JwtAuthenticationFilter
+
+        # ML Service routes - internal only (no external access)
+        # Not exposed through gateway
+
+      # Global CORS configuration
+      globalcors:
+        cors-configurations:
+          '[/**]':
+            allowedOrigins:
+              - "http://localhost:3000"  # Frontend dev server
+              - "http://localhost:3001"
+            allowedMethods:
+              - GET
+              - POST
+              - PUT
+              - PATCH
+              - DELETE
+              - OPTIONS
+            allowedHeaders:
+              - "*"
+            allowCredentials: true
+            maxAge: 3600
+
+server:
+  port: 8080
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.videomatch: DEBUG
+    org.springframework.cloud.gateway: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
+
+# Actuator endpoints
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always
