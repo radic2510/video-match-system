@@ -2,18 +2,26 @@ version: '3.8'
 
 services:
   postgres:
-    image: postgres:14-alpine
+    image: ankane/pgvector:v0.5.1
+    container_name: videomatch-postgres
     environment:
       POSTGRES_DB: videomatch
       POSTGRES_USER: videomatch
-      POSTGRES_PASSWORD: password
+      POSTGRES_PASSWORD: changeme123
+      POSTGRES_INITDB_ARGS: "-E UTF8"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./infrastructure/database/init:/docker-entrypoint-initdb.d
+      - ./infrastructure/database/init:/docker-entrypoint-initdb.d:ro
     ports:
       - "5432:5432"
     networks:
       - videomatch-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U videomatch -d videomatch"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
 
   frontend:
     build:
