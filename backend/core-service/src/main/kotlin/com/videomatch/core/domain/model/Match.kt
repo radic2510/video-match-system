@@ -51,7 +51,8 @@ data class Match(
     @Column(name = "status", nullable = false, length = 50)
     val status: MatchStatus = MatchStatus.QUEUED,
 
-    @Column(name = "result", columnDefinition = "jsonb")
+    @Column(name = "result", columnDefinition = "TEXT")
+    @Convert(converter = com.videomatch.core.infrastructure.converter.MatchResultConverter::class)
     val result: MatchResult? = null,
 
     @Column(name = "queue_position", nullable = false)

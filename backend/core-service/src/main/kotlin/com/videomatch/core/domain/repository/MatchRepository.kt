@@ -3,16 +3,13 @@ package com.videomatch.core.domain.repository
 import com.videomatch.core.domain.model.Match
 import com.videomatch.core.domain.model.MatchResult
 import com.videomatch.core.domain.model.MatchStatus
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
 import java.util.UUID
 
 /**
  * Repository interface for Match entity operations
  * Uses Kotlin coroutines for async operations
  */
-@Repository
-interface MatchRepository : JpaRepository<Match, UUID> {
+interface MatchRepository {
 
     /**
      * Save a match to the database

@@ -2,16 +2,13 @@ package com.videomatch.core.domain.repository
 
 import com.videomatch.core.domain.model.Advertisement
 import com.videomatch.core.domain.model.AdvertisementStatus
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
 import java.util.UUID
 
 /**
  * Repository interface for Advertisement entity operations
  * Uses Kotlin coroutines for async operations
  */
-@Repository
-interface AdvertisementRepository : JpaRepository<Advertisement, UUID> {
+interface AdvertisementRepository {
 
     /**
      * Save an advertisement to the database

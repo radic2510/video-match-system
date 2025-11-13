@@ -2,12 +2,14 @@ package com.videomatch.core.domain.repository
 
 import com.videomatch.core.domain.model.User
 import com.videomatch.core.domain.model.UserRole
+import com.videomatch.core.infrastructure.repository.UserRepositoryImpl
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -23,6 +25,7 @@ import kotlin.test.assertTrue
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(UserRepositoryImpl::class)
 class UserRepositoryTest {
 
     companion object {

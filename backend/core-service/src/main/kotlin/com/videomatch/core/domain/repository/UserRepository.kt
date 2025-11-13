@@ -1,16 +1,13 @@
 package com.videomatch.core.domain.repository
 
 import com.videomatch.core.domain.model.User
-import org.springframework.data.jpa.repository.JpaRepository
-import org.springframework.stereotype.Repository
 import java.util.UUID
 
 /**
  * Repository interface for User entity operations
  * Uses Kotlin coroutines for async operations
  */
-@Repository
-interface UserRepository : JpaRepository<User, UUID> {
+interface UserRepository {
 
     /**
      * Save a user to the database
