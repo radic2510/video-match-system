@@ -7,8 +7,7 @@ CREATE TABLE IF NOT EXISTS image_matches (
     result TEXT,
     queue_position INTEGER NOT NULL,
     priority INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    created_at TIMESTAMP NOT NULL
 );
 
 -- Create indexes for faster lookups

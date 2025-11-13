@@ -3,12 +3,15 @@ package com.videomatch.core.domain.repository
 import com.videomatch.core.domain.model.Match
 import com.videomatch.core.domain.model.MatchResult
 import com.videomatch.core.domain.model.MatchStatus
+import com.videomatch.core.infrastructure.converter.MatchResultConverter
+import com.videomatch.core.infrastructure.repository.MatchRepositoryImpl
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
+import org.springframework.context.annotation.Import
 import org.springframework.test.context.DynamicPropertyRegistry
 import org.springframework.test.context.DynamicPropertySource
 import org.testcontainers.containers.PostgreSQLContainer
@@ -24,6 +27,7 @@ import kotlin.test.assertTrue
 @DataJpaTest
 @Testcontainers
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@Import(MatchRepositoryImpl::class, MatchResultConverter::class)
 class MatchRepositoryTest {
 
     companion object {
