@@ -6,6 +6,7 @@ plugins {
 dependencies {
     // Spring Boot (without starter-web, this is a library module)
     implementation("org.springframework.boot:spring-boot-starter:3.2.1")
+    implementation("org.springframework.security:spring-security-crypto")
 
     // Validation
     implementation("jakarta.validation:jakarta.validation-api:3.0.2")
