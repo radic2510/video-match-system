@@ -1,0 +1,49 @@
+spring:
+  application:
+    name: processing-service
+
+server:
+  port: 8082
+
+# Core Service configuration
+core-service:
+  url: http://localhost:8081
+  api:
+    matches-queue: /api/matches/queue
+    matches-status: /api/matches/{id}/status
+    matches-result: /api/matches/{id}/result
+
+# ML Service configuration
+ml-service:
+  url: http://localhost:8000
+  api:
+    detect-display: /api/v1/inference/detect-display
+    match-advertisement: /api/v1/inference/match-advertisement
+    health: /health
+  timeout-seconds: 30
+  max-retries: 3
+  retry-delay-ms: 1000
+
+# Queue Processor configuration
+queue-processor:
+  enabled: true
+  interval-ms: 5000
+  concurrent-processing: 5
+  batch-size: 5
+
+# Resource Monitor configuration
+resource-monitor:
+  enabled: true
+  check-interval-ms: 10000
+  thresholds:
+    cpu-percent: 80
+    memory-percent: 90
+    gpu-memory-percent: 85
+
+# Logging
+logging:
+  level:
+    root: INFO
+    com.videomatch: DEBUG
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} - %msg%n"
