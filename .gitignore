@@ -37,3 +37,6 @@ data/
 # OS
 .DS_Store
 Thumbs.db
+
+# personal files
+personal/

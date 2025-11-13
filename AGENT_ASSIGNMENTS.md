@@ -1,5 +1,34 @@
 # Agent Assignments - Detailed Task Breakdown
 
+## ⚠️ MANDATORY RULES FOR ALL AGENTS
+
+Before starting any work, **ALL AGENTS MUST**:
+
+### 1. Follow TDD (Test-Driven Development)
+```
+🔴 Write Test FIRST → 🟢 Implement → 🔵 Refactor → Commit
+```
+- **Never** write implementation before tests
+- **All tests must pass** before committing
+- See `DEVELOPMENT_GUIDELINES.md` for TDD examples
+
+### 2. Feature-Based Commits
+- **Commit** after each complete feature (with tests)
+- **Push** after 3-5 features or end of day
+- **Never commit** failing tests
+
+### 3. Decision Requests
+- Need user input? Create `personal/YYYY-MM-DD_NN.md`
+- See `personal/README.md` for template
+- Examples: architectural choices, resource requests, ambiguous requirements
+
+### 4. Required Reading
+- 📖 `DEVELOPMENT_GUIDELINES.md` - TDD workflow and examples
+- 📖 `API_CONTRACTS.md` - API specifications (MUST follow exactly)
+- 📖 `GIT_STRATEGY.md` - Git workflow and commit conventions
+
+---
+
 ## Agent A: Infrastructure Engineer
 
 ### Branch: `feature/infrastructure`

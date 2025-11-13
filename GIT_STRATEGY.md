@@ -1,5 +1,27 @@
 # Git Strategy - Parallel Development
 
+## ⚠️ IMPORTANT: Development Rules
+
+Before proceeding, all agents MUST follow these rules:
+
+1. **TDD (Test-Driven Development)**
+   - Write tests FIRST, then implementation
+   - All tests must pass before committing
+   - See `DEVELOPMENT_GUIDELINES.md` for details
+
+2. **Feature-Based Commits**
+   - Commit after each complete feature with tests
+   - Push after 3-5 features or end of day
+   - No commits with failing tests
+
+3. **Decision Requests**
+   - Document questions in `personal/YYYY-MM-DD_NN.md`
+   - See `personal/README.md` for template
+
+**📖 Read DEVELOPMENT_GUIDELINES.md before starting development!**
+
+---
+
 ## Branch Structure
 
 ```
@@ -69,20 +91,46 @@ git merge develop
 # Test your changes
 ```
 
-#### Step 3: Commit Regularly
-```bash
-# After completing a subtask
-git add .
-git commit -m "feat(infrastructure): add PostgreSQL docker configuration
+#### Step 3: Feature-Based Commits (IMPORTANT!)
 
-- Add docker-compose.yml with PostgreSQL service
-- Configure pgvector extension
-- Add initialization scripts
+**⚠️ COMMIT STRATEGY:**
+- Commit after completing each **FEATURE** (not every line of code)
+- Push after completing **3-5 features** or at end of day
+
+**What is a Feature?**
+A feature is a complete, testable unit of functionality:
+- ✅ User registration endpoint with tests
+- ✅ YOLOv8 display detection with tests
+- ✅ Image upload component with tests
+- ❌ One line of code
+- ❌ Importing a library
+
+```bash
+# TDD Workflow for each feature:
+# 1. Write test FIRST ❌
+# 2. Run test (should FAIL)
+# 3. Implement feature ✅
+# 4. Run test (should PASS)
+# 5. Refactor if needed
+# 6. Commit
+
+# Example: After implementing user repository with tests
+git add src/ tests/
+git commit -m "feat(backend-core): implement user repository
+
+- Add User domain model with validation
+- Implement UserRepository with PostgreSQL
+- Add save, findById, findByEmail methods
+- Add integration tests with TestContainers
+- Test coverage: 95%
 
 🤖 Generated with [Claude Code](https://claude.com/claude-code)
 
 Co-Authored-By: Claude <noreply@anthropic.com>"
 
+# DON'T push yet - wait for 3-5 features
+
+# After 3-5 feature commits OR end of day:
 git push origin feature/<your-branch-name>
 ```
 

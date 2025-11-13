@@ -4,6 +4,32 @@
 
 This document outlines the parallel development strategy using multiple Claude agents to accelerate the development of the Video Match System from 43 days to approximately 16-18 days.
 
+## ⚠️ Development Rules (MANDATORY)
+
+All agents MUST follow these rules:
+
+### 1. TDD (Test-Driven Development)
+- Write tests FIRST, then implementation
+- All tests must pass before committing
+- No exceptions - see `DEVELOPMENT_GUIDELINES.md`
+
+### 2. Feature-Based Commits
+- Commit after each complete feature (with tests)
+- Push after 3-5 features or end of day
+- Never commit failing tests
+
+### 3. Decision Requests
+- Questions? Create `personal/YYYY-MM-DD_NN.md`
+- See `personal/README.md` for template
+
+### 4. Required Reading Before Starting
+- 📖 `DEVELOPMENT_GUIDELINES.md` - Detailed TDD workflow
+- 📖 `AGENT_ASSIGNMENTS.md` - Your specific tasks
+- 📖 `API_CONTRACTS.md` - API specifications
+- 📖 `GIT_STRATEGY.md` - Git workflow
+
+---
+
 ## Project Structure
 
 ```
