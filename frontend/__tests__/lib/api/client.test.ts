@@ -176,7 +176,7 @@ describe('VideoMatchAPIClient', () => {
       )
 
       // When/Then
-      await expect(client.getMatchResult('error-test')).rejects.toThrow()
+      await expect(client.getMatchResult('error-test')).rejects.toThrow('Unable to connect to server')
     })
 
     it('should throw error on 404', async () => {
@@ -188,7 +188,46 @@ describe('VideoMatchAPIClient', () => {
       )
 
       // When/Then
-      await expect(client.getMatchResult('not-found')).rejects.toThrow()
+      await expect(client.getMatchResult('not-found')).rejects.toThrow('Resource not found')
+    })
+
+    it('should throw error on 401 (Unauthorized)', async () => {
+      // Given
+      server.use(
+        http.get('http://localhost:8080/api/v1/matches/unauthorized', () => {
+          return new HttpResponse(null, { status: 401 })
+        })
+      )
+
+      // When/Then
+      await expect(client.getMatchResult('unauthorized')).rejects.toThrow('Authentication required')
+    })
+
+    it('should throw error on 500 (Server Error)', async () => {
+      // Given
+      server.use(
+        http.get('http://localhost:8080/api/v1/matches/server-error', () => {
+          return new HttpResponse(null, { status: 500 })
+        })
+      )
+
+      // When/Then
+      await expect(client.getMatchResult('server-error')).rejects.toThrow('Server error, please try again')
+    })
+
+    it('should include error details from response body', async () => {
+      // Given
+      server.use(
+        http.get('http://localhost:8080/api/v1/matches/detailed-error', () => {
+          return HttpResponse.json(
+            { message: 'Invalid match ID format' },
+            { status: 400 }
+          )
+        })
+      )
+
+      // When/Then
+      await expect(client.getMatchResult('detailed-error')).rejects.toThrow('Invalid match ID format')
     })
   })
 })

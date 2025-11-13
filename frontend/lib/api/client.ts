@@ -9,13 +9,29 @@ import type {
   PageResponse,
 } from '@/types/api'
 
+/**
+ * Custom error class for API errors
+ */
+export class APIError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public details?: any
+  ) {
+    super(message)
+    this.name = 'APIError'
+  }
+}
+
 export class VideoMatchAPIClient {
   private baseURL: string
   private useMock: boolean
+  private isDevelopment: boolean
 
   constructor(baseURL: string, useMock: boolean = false) {
     this.baseURL = baseURL
     this.useMock = useMock
+    this.isDevelopment = process.env.NODE_ENV === 'development'
   }
 
   /**
@@ -26,32 +42,20 @@ export class VideoMatchAPIClient {
     formData.append('image', file)
     formData.append('priority', priority)
 
-    const response = await fetch(`${this.baseURL}/api/v1/matches`, {
+    return this.fetch<UploadResponse>('/api/v1/matches', {
       method: 'POST',
       body: formData,
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload image: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
    * Get match result by ID
    */
   async getMatchResult(matchId: string): Promise<Match> {
-    const response = await fetch(`${this.baseURL}/api/v1/matches/${matchId}`, {
+    return this.fetch<Match>(`/api/v1/matches/${matchId}`, {
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch match result: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
@@ -63,34 +67,22 @@ export class VideoMatchAPIClient {
       size: size.toString(),
     })
 
-    const response = await fetch(`${this.baseURL}/api/v1/matches?${params}`, {
+    return this.fetch<PageResponse<Match>>(`/api/v1/matches?${params}`, {
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch matches: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
    * Login user
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const response = await fetch(`${this.baseURL}/api/v1/users/login`, {
+    const data = await this.fetch<LoginResponse>('/api/v1/users/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(credentials),
     })
-
-    if (!response.ok) {
-      throw new Error(`Login failed: ${response.statusText}`)
-    }
-
-    const data = await response.json()
 
     // Store token in localStorage
     if (typeof window !== 'undefined') {
@@ -104,19 +96,13 @@ export class VideoMatchAPIClient {
    * Register new user
    */
   async register(userData: RegisterRequest): Promise<User> {
-    const response = await fetch(`${this.baseURL}/api/v1/users/register`, {
+    return this.fetch<User>('/api/v1/users/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify(userData),
     })
-
-    if (!response.ok) {
-      throw new Error(`Registration failed: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
@@ -137,30 +123,18 @@ export class VideoMatchAPIClient {
       size: size.toString(),
     })
 
-    const response = await fetch(`${this.baseURL}/api/v1/advertisements?${params}`, {
+    return this.fetch<PageResponse<Advertisement>>(`/api/v1/advertisements?${params}`, {
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch advertisements: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
    * Get single advertisement
    */
   async getAdvertisement(id: string): Promise<Advertisement> {
-    const response = await fetch(`${this.baseURL}/api/v1/advertisements/${id}`, {
+    return this.fetch<Advertisement>(`/api/v1/advertisements/${id}`, {
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch advertisement: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
@@ -176,17 +150,11 @@ export class VideoMatchAPIClient {
     formData.append('brandName', brandName)
     formData.append('campaignName', campaignName)
 
-    const response = await fetch(`${this.baseURL}/api/v1/advertisements`, {
+    return this.fetch<Advertisement>('/api/v1/advertisements', {
       method: 'POST',
       body: formData,
       headers: this.getAuthHeaders(),
     })
-
-    if (!response.ok) {
-      throw new Error(`Failed to upload advertisement: ${response.statusText}`)
-    }
-
-    return response.json()
   }
 
   /**
@@ -204,10 +172,104 @@ export class VideoMatchAPIClient {
 
     return headers
   }
+
+  /**
+   * Handle API response and errors
+   */
+  private async handleResponse<T>(response: Response): Promise<T> {
+    // Handle successful responses
+    if (response.ok) {
+      return response.json()
+    }
+
+    // Handle error responses
+    let errorMessage: string
+    let errorDetails: any = null
+
+    // Try to extract error message from response body
+    try {
+      const errorData = await response.json()
+      errorMessage = errorData.message || errorData.error || this.getDefaultErrorMessage(response.status)
+      errorDetails = errorData
+    } catch {
+      // If response body is not JSON, use default message
+      errorMessage = this.getDefaultErrorMessage(response.status)
+    }
+
+    throw new APIError(errorMessage, response.status, errorDetails)
+  }
+
+  /**
+   * Get default error message for status code
+   */
+  private getDefaultErrorMessage(status: number): string {
+    switch (status) {
+      case 400:
+        return 'Invalid request'
+      case 401:
+        return 'Authentication required'
+      case 403:
+        return 'Access denied'
+      case 404:
+        return 'Resource not found'
+      case 408:
+        return 'Request timed out'
+      case 429:
+        return 'Too many requests'
+      case 500:
+        return 'Server error, please try again'
+      case 502:
+        return 'Bad gateway'
+      case 503:
+        return 'Service unavailable'
+      case 504:
+        return 'Gateway timeout'
+      default:
+        return `Request failed with status ${status}`
+    }
+  }
+
+  /**
+   * Perform fetch request with error handling and logging
+   */
+  private async fetch<T>(url: string, options: RequestInit = {}): Promise<T> {
+    const fullUrl = `${this.baseURL}${url}`
+
+    // Log request in development
+    if (this.isDevelopment && typeof window !== 'undefined') {
+      console.log(`[API] ${options.method || 'GET'} ${url}`)
+    }
+
+    try {
+      const response = await fetch(fullUrl, options)
+      return this.handleResponse<T>(response)
+    } catch (error) {
+      // Handle network errors
+      if (error instanceof APIError) {
+        throw error
+      }
+
+      // Log error in development
+      if (this.isDevelopment && typeof window !== 'undefined') {
+        console.error('[API] Network error:', error)
+      }
+
+      throw new APIError('Unable to connect to server')
+    }
+  }
+}
+
+/**
+ * Create API client instance
+ * Use environment-based configuration
+ * MSW is only used in test environment
+ */
+function createAPIClient(): VideoMatchAPIClient {
+  const baseURL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080'
+  const useMock = process.env.NODE_ENV === 'test'
+
+  return new VideoMatchAPIClient(baseURL, useMock)
 }
 
 // Export singleton instance
-export const apiClient = new VideoMatchAPIClient(
-  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080',
-  process.env.NODE_ENV === 'test'
-)
+export const apiClient = createAPIClient()
