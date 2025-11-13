@@ -1,0 +1,646 @@
+openapi: 3.0.3
+info:
+  title: Video Match System - Backend API
+  description: |
+    Backend REST API for the Video Match System.
+    Handles user management, advertisement management, and image matching requests.
+  version: 1.0.0
+  contact:
+    name: Video Match Team
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:8080/api/v1
+    description: Development server
+  - url: http://production-server/api/v1
+    description: Production server
+
+tags:
+  - name: users
+    description: User management operations
+  - name: advertisements
+    description: Advertisement video management
+  - name: matches
+    description: Image matching operations
+  - name: feedback
+    description: User feedback collection
+
+paths:
+  /users/register:
+    post:
+      tags: [users]
+      summary: Register a new user
+      operationId: registerUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRegisterRequest'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+  /users/login:
+    post:
+      tags: [users]
+      summary: Authenticate user
+      operationId: loginUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserLoginRequest'
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /advertisements:
+    post:
+      tags: [advertisements]
+      summary: Upload a new advertisement video
+      operationId: uploadAdvertisement
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video, brandName, campaignName]
+              properties:
+                video:
+                  type: string
+                  format: binary
+                brandName:
+                  type: string
+                  maxLength: 100
+                campaignName:
+                  type: string
+                  maxLength: 200
+      responses:
+        '201':
+          description: Advertisement uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advertisement'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+    get:
+      tags: [advertisements]
+      summary: List all advertisements
+      operationId: listAdvertisements
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [PROCESSING, READY, FAILED]
+      responses:
+        '200':
+          description: List of advertisements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdvertisementPage'
+
+  /advertisements/{id}:
+    get:
+      tags: [advertisements]
+      summary: Get advertisement details
+      operationId: getAdvertisement
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Advertisement details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Advertisement'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /matches:
+    post:
+      tags: [matches]
+      summary: Submit an image for matching
+      operationId: createMatch
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                priority:
+                  type: string
+                  enum: [low, normal, high]
+                  default: normal
+      responses:
+        '202':
+          description: Match request accepted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchQueueResponse'
+        '400':
+          $ref: '#/components/responses/ValidationError'
+
+    get:
+      tags: [matches]
+      summary: List user match history
+      operationId: listMatches
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/PageParam'
+        - $ref: '#/components/parameters/SizeParam'
+        - name: userId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: startDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+        - name: endDate
+          in: query
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Match history
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchPage'
+
+  /matches/{id}:
+    get:
+      tags: [matches]
+      summary: Get match result
+      operationId: getMatch
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      responses:
+        '200':
+          description: Match result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Match'
+        '404':
+          $ref: '#/components/responses/NotFoundError'
+
+  /matches/{id}/feedback:
+    post:
+      tags: [feedback]
+      summary: Submit feedback on match result
+      operationId: submitFeedback
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: '#/components/parameters/IdParam'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FeedbackRequest'
+      responses:
+        '200':
+          description: Feedback submitted
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FeedbackResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdParam:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+
+    PageParam:
+      name: page
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+
+    SizeParam:
+      name: size
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+
+  schemas:
+    UserRegisterRequest:
+      type: object
+      required: [email, password, name]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 8
+        name:
+          type: string
+          maxLength: 100
+
+    UserLoginRequest:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        name:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+
+    LoginResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token expiration in seconds
+        user:
+          $ref: '#/components/schemas/User'
+
+    Advertisement:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        videoPath:
+          type: string
+        brandName:
+          type: string
+        campaignName:
+          type: string
+        status:
+          type: string
+          enum: [PROCESSING, READY, FAILED]
+        frameCount:
+          type: integer
+          nullable: true
+        metadata:
+          $ref: '#/components/schemas/AdvertisementMetadata'
+        createdAt:
+          type: string
+          format: date-time
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    AdvertisementMetadata:
+      type: object
+      properties:
+        duration:
+          type: number
+          format: float
+        resolution:
+          type: string
+        dominantColors:
+          type: array
+          items:
+            $ref: '#/components/schemas/ColorInfo'
+        textRegions:
+          type: array
+          items:
+            $ref: '#/components/schemas/TextRegion'
+
+    ColorInfo:
+      type: object
+      properties:
+        color:
+          type: string
+          pattern: '^#[0-9A-F]{6}$'
+        percentage:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    TextRegion:
+      type: object
+      properties:
+        text:
+          type: string
+        confidence:
+          type: number
+          format: float
+
+    MatchQueueResponse:
+      type: object
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED]
+        queuePosition:
+          type: integer
+        estimatedWaitTimeMs:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    Match:
+      type: object
+      properties:
+        matchId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        status:
+          type: string
+          enum: [QUEUED, PROCESSING, COMPLETED, FAILED]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        currentStage:
+          type: string
+          nullable: true
+        result:
+          $ref: '#/components/schemas/MatchResult'
+        error:
+          $ref: '#/components/schemas/ErrorInfo'
+        createdAt:
+          type: string
+          format: date-time
+        completedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    MatchResult:
+      type: object
+      properties:
+        matched:
+          type: boolean
+        advertisement:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            brandName:
+              type: string
+            campaignName:
+              type: string
+        confidence:
+          type: number
+          format: float
+        frameNumber:
+          type: integer
+        timestamp:
+          type: number
+          format: float
+        processingTimeMs:
+          type: integer
+        verificationScores:
+          type: object
+          properties:
+            embedding:
+              type: number
+            sift:
+              type: number
+            color:
+              type: number
+            text:
+              type: number
+        alternativeCandidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/Candidate'
+
+    Candidate:
+      type: object
+      properties:
+        advertisementId:
+          type: string
+          format: uuid
+        brandName:
+          type: string
+        confidence:
+          type: number
+
+    FeedbackRequest:
+      type: object
+      required: [isCorrect]
+      properties:
+        isCorrect:
+          type: boolean
+        correctVideoId:
+          type: string
+          format: uuid
+          nullable: true
+        feedbackType:
+          type: string
+          enum: [WRONG_MATCH, NO_MATCH, PARTIAL_MATCH]
+        comment:
+          type: string
+          maxLength: 500
+
+    FeedbackResponse:
+      type: object
+      properties:
+        feedbackId:
+          type: string
+          format: uuid
+        matchId:
+          type: string
+          format: uuid
+        acknowledged:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    AdvertisementPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Advertisement'
+
+    MatchPage:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          properties:
+            content:
+              type: array
+              items:
+                $ref: '#/components/schemas/Match'
+
+    Page:
+      type: object
+      properties:
+        content:
+          type: array
+        pageable:
+          type: object
+          properties:
+            pageNumber:
+              type: integer
+            pageSize:
+              type: integer
+            totalElements:
+              type: integer
+            totalPages:
+              type: integer
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object
+              nullable: true
+            timestamp:
+              type: string
+              format: date-time
+            requestId:
+              type: string
+              nullable: true
+
+    ErrorInfo:
+      type: object
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        recoverable:
+          type: boolean
+
+  responses:
+    ValidationError:
+      description: Validation error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: VALIDATION_ERROR
+              message: Invalid file format. Expected JPG, PNG
+              details:
+                field: image
+                rejectedValue: video.mp4
+              timestamp: '2025-01-15T10:00:00Z'
+
+    UnauthorizedError:
+      description: Authentication required
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: UNAUTHORIZED
+              message: Authentication required
+              timestamp: '2025-01-15T10:00:00Z'
+
+    NotFoundError:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/Error'
+          example:
+            error:
+              code: RESOURCE_NOT_FOUND
+              message: Advertisement not found
+              timestamp: '2025-01-15T10:00:00Z'

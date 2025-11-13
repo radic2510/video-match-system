@@ -1,0 +1,645 @@
+openapi: 3.0.3
+info:
+  title: Video Match System - ML Service API
+  description: |
+    ML Service API for computer vision inference operations.
+    Internal API used by the Backend Processing Service.
+  version: 1.0.0
+  contact:
+    name: ML Team
+
+servers:
+  - url: http://localhost:8000/api/v1
+    description: Development server
+
+security:
+  - apiKeyAuth: []
+
+tags:
+  - name: inference
+    description: ML inference operations
+  - name: preprocess
+    description: Video preprocessing operations
+  - name: health
+    description: Health check endpoints
+
+paths:
+  /inference/detect-display:
+    post:
+      tags: [inference]
+      summary: Detect display in image
+      operationId: detectDisplay
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                  description: Image file (JPG, PNG)
+      responses:
+        '200':
+          description: Display detection result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DisplayDetectionResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InferenceError'
+
+  /inference/extract-embedding:
+    post:
+      tags: [inference]
+      summary: Extract embedding from image
+      operationId: extractEmbedding
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                model:
+                  type: string
+                  enum: [ensemble, clip, dino]
+                  default: ensemble
+                  description: Embedding model to use
+      responses:
+        '200':
+          description: Embedding extracted successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EmbeddingResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InferenceError'
+
+  /inference/match-advertisement:
+    post:
+      tags: [inference]
+      summary: Match viewer photo to advertisements
+      operationId: matchAdvertisement
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [image]
+              properties:
+                image:
+                  type: string
+                  format: binary
+                topK:
+                  type: integer
+                  minimum: 1
+                  maximum: 100
+                  default: 30
+                  description: Number of top candidates to return
+      responses:
+        '200':
+          description: Match result
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MatchResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '500':
+          $ref: '#/components/responses/InferenceError'
+
+  /preprocess/video:
+    post:
+      tags: [preprocess]
+      summary: Preprocess advertisement video
+      operationId: preprocessVideo
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [video, videoId]
+              properties:
+                video:
+                  type: string
+                  format: binary
+                videoId:
+                  type: string
+                  format: uuid
+      responses:
+        '202':
+          description: Preprocessing started
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreprocessTaskResponse'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+
+  /preprocess/video/{taskId}:
+    get:
+      tags: [preprocess]
+      summary: Check preprocessing status
+      operationId: getPreprocessStatus
+      parameters:
+        - name: taskId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Preprocessing status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PreprocessStatusResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /health:
+    get:
+      tags: [health]
+      summary: Service health check
+      operationId: healthCheck
+      security: []  # No auth required
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+        '503':
+          description: Service unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+
+  /health/models:
+    get:
+      tags: [health]
+      summary: Check model loading status
+      operationId: modelsHealth
+      security: []
+      responses:
+        '200':
+          description: Model status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ModelsHealthResponse'
+
+components:
+  securitySchemes:
+    apiKeyAuth:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: Service-to-service API key
+
+  schemas:
+    DisplayDetectionResponse:
+      type: object
+      required: [detections, inferenceTimeMs]
+      properties:
+        detections:
+          type: array
+          items:
+            $ref: '#/components/schemas/Detection'
+        inferenceTimeMs:
+          type: integer
+          description: Inference time in milliseconds
+
+    Detection:
+      type: object
+      required: [bbox, confidence, class]
+      properties:
+        bbox:
+          $ref: '#/components/schemas/BoundingBox'
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        class:
+          type: string
+          example: display
+
+    BoundingBox:
+      type: object
+      required: [x, y, width, height]
+      properties:
+        x:
+          type: integer
+        y:
+          type: integer
+        width:
+          type: integer
+        height:
+          type: integer
+
+    EmbeddingResponse:
+      type: object
+      required: [embedding, model, inferenceTimeMs]
+      properties:
+        embedding:
+          type: array
+          items:
+            type: number
+            format: float
+          description: 768-dimensional embedding vector
+        model:
+          type: string
+          enum: [ensemble, clip, dino]
+        inferenceTimeMs:
+          type: integer
+
+    MatchResponse:
+      type: object
+      required: [matched, totalInferenceTimeMs]
+      properties:
+        matched:
+          type: boolean
+          description: Whether a match was found
+        bestMatch:
+          $ref: '#/components/schemas/BestMatch'
+        alternativeCandidates:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlternativeCandidate'
+        processingStages:
+          $ref: '#/components/schemas/ProcessingStages'
+        totalInferenceTimeMs:
+          type: integer
+
+    BestMatch:
+      type: object
+      required: [videoId, frameNumber, confidence, scores]
+      properties:
+        videoId:
+          type: string
+          format: uuid
+        frameNumber:
+          type: integer
+        confidence:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+        scores:
+          $ref: '#/components/schemas/VerificationScores'
+
+    VerificationScores:
+      type: object
+      required: [embedding]
+      properties:
+        embedding:
+          type: number
+          format: float
+        sift:
+          type: number
+          format: float
+          nullable: true
+        color:
+          type: number
+          format: float
+          nullable: true
+        text:
+          type: number
+          format: float
+          nullable: true
+
+    AlternativeCandidate:
+      type: object
+      required: [videoId, frameNumber, confidence]
+      properties:
+        videoId:
+          type: string
+          format: uuid
+        frameNumber:
+          type: integer
+        confidence:
+          type: number
+          format: float
+
+    ProcessingStages:
+      type: object
+      properties:
+        displayDetection:
+          type: integer
+          description: Time in milliseconds
+        perspectiveCorrection:
+          type: integer
+        qualityAssessment:
+          type: integer
+        qualityEnhancement:
+          type: integer
+          nullable: true
+        embeddingExtraction:
+          type: integer
+        vectorSearch:
+          type: integer
+        verification:
+          type: integer
+
+    PreprocessTaskResponse:
+      type: object
+      required: [taskId, status, estimatedTimeMs]
+      properties:
+        taskId:
+          type: string
+        status:
+          type: string
+          enum: [PROCESSING]
+        estimatedTimeMs:
+          type: integer
+
+    PreprocessStatusResponse:
+      type: object
+      required: [taskId, status]
+      properties:
+        taskId:
+          type: string
+        status:
+          type: string
+          enum: [PROCESSING, COMPLETED, FAILED]
+        progress:
+          type: integer
+          minimum: 0
+          maximum: 100
+          nullable: true
+        result:
+          $ref: '#/components/schemas/PreprocessResult'
+        error:
+          type: string
+          nullable: true
+        processingTimeMs:
+          type: integer
+          nullable: true
+
+    PreprocessResult:
+      type: object
+      required: [videoId, totalFrames, uniqueFrames, embeddingsGenerated]
+      properties:
+        videoId:
+          type: string
+          format: uuid
+        totalFrames:
+          type: integer
+        uniqueFrames:
+          type: integer
+          description: Frames after duplicate removal
+        embeddingsGenerated:
+          type: integer
+        metadata:
+          $ref: '#/components/schemas/VideoMetadata'
+
+    VideoMetadata:
+      type: object
+      properties:
+        dominantColors:
+          type: array
+          items:
+            type: object
+            properties:
+              color:
+                type: string
+              percentage:
+                type: number
+        textRegions:
+          type: array
+          items:
+            type: object
+            properties:
+              text:
+                type: string
+              confidence:
+                type: number
+        avgFrameEntropy:
+          type: number
+          format: float
+        sceneTransitions:
+          type: array
+          items:
+            type: object
+            properties:
+              frameNumber:
+                type: integer
+              timestamp:
+                type: number
+
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [healthy, unhealthy, degraded]
+        models:
+          type: object
+          properties:
+            yolov8:
+              type: string
+              enum: [loaded, failed, not_loaded]
+            clip:
+              type: string
+              enum: [loaded, failed, not_loaded]
+            dino:
+              type: string
+              enum: [loaded, failed, not_loaded]
+            esrgan:
+              type: string
+              enum: [loaded, failed, not_loaded]
+            ocr:
+              type: string
+              enum: [loaded, failed, not_loaded]
+        gpu:
+          $ref: '#/components/schemas/GPUStatus'
+        cache:
+          $ref: '#/components/schemas/CacheStatus'
+
+    ModelsHealthResponse:
+      type: object
+      properties:
+        models:
+          type: object
+          additionalProperties:
+            $ref: '#/components/schemas/ModelStatus'
+
+    ModelStatus:
+      type: object
+      required: [name, status]
+      properties:
+        name:
+          type: string
+        status:
+          type: string
+          enum: [loaded, failed, not_loaded]
+        loadedAt:
+          type: string
+          format: date-time
+          nullable: true
+        memoryUsageMB:
+          type: integer
+          nullable: true
+        error:
+          type: string
+          nullable: true
+
+    GPUStatus:
+      type: object
+      properties:
+        available:
+          type: boolean
+        deviceName:
+          type: string
+          nullable: true
+        memoryUsed:
+          type: integer
+          description: Memory in MB
+        memoryTotal:
+          type: integer
+          description: Memory in MB
+        utilization:
+          type: integer
+          description: GPU utilization percentage
+
+    CacheStatus:
+      type: object
+      properties:
+        memoryEntries:
+          type: integer
+        diskSizeGB:
+          type: number
+          format: float
+        hitRate:
+          type: number
+          format: float
+          minimum: 0
+          maximum: 1
+
+    MLError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - DISPLAY_NOT_DETECTED
+                - LOW_QUALITY_IMAGE
+                - MODEL_ERROR
+                - GPU_MEMORY_ERROR
+                - NO_MATCH_FOUND
+                - INVALID_INPUT
+                - PROCESSING_TIMEOUT
+            message:
+              type: string
+            details:
+              type: object
+              nullable: true
+            recoverable:
+              type: boolean
+            timestamp:
+              type: string
+              format: date-time
+
+  responses:
+    BadRequest:
+      description: Invalid request
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MLError'
+          example:
+            error:
+              code: INVALID_INPUT
+              message: Image format not supported. Expected: JPG, PNG
+              recoverable: false
+              timestamp: '2025-01-15T10:00:00Z'
+
+    InferenceError:
+      description: ML inference error
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MLError'
+          examples:
+            displayNotDetected:
+              value:
+                error:
+                  code: DISPLAY_NOT_DETECTED
+                  message: No display detected in the image
+                  details:
+                    confidenceThreshold: 0.7
+                    maxConfidence: 0.45
+                  recoverable: false
+                  timestamp: '2025-01-15T10:00:00Z'
+            gpuMemoryError:
+              value:
+                error:
+                  code: GPU_MEMORY_ERROR
+                  message: Insufficient GPU memory
+                  details:
+                    gpuMemoryUsed: 9500
+                    gpuMemoryTotal: 10240
+                    required: 1000
+                  recoverable: true
+                  timestamp: '2025-01-15T10:00:00Z'
+
+    NotFound:
+      description: Resource not found
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/MLError'
+          example:
+            error:
+              code: TASK_NOT_FOUND
+              message: Preprocessing task not found
+              recoverable: false
+              timestamp: '2025-01-15T10:00:00Z'
+
+  examples:
+    SuccessfulMatch:
+      value:
+        matched: true
+        bestMatch:
+          videoId: 660e8400-e29b-41d4-a716-446655440001
+          frameNumber: 234
+          confidence: 0.94
+          scores:
+            embedding: 0.92
+            sift: 0.95
+            color: 0.88
+            text: 0.91
+        alternativeCandidates:
+          - videoId: 660e8400-e29b-41d4-a716-446655440003
+            frameNumber: 120
+            confidence: 0.78
+        processingStages:
+          displayDetection: 45
+          perspectiveCorrection: 30
+          qualityAssessment: 10
+          embeddingExtraction: 35
+          vectorSearch: 50
+          verification: 100
+        totalInferenceTimeMs: 270
