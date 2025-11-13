@@ -96,32 +96,34 @@ class UserService(
     /**
      * Update user information
      * @param id User UUID
-     * @param updates UserUpdate with fields to update
+     * @param email New email (optional)
+     * @param name New name (optional)
+     * @param password New password (optional)
      * @return Updated user entity
      * @throws ResourceNotFoundException if user not found
      * @throws ValidationException if validation fails
      */
-    suspend fun updateUser(id: UUID, updates: UserUpdate): User {
+    suspend fun updateUser(id: UUID, email: String? = null, name: String? = null, password: String? = null): User {
         // Find existing user
         val existingUser = userRepository.findById(id)
             ?: throw ResourceNotFoundException("User", id.toString())
 
         // Validate new email if provided
-        updates.email?.let { newEmail ->
+        email?.let { newEmail ->
             if (!Validators.isValidEmail(newEmail)) {
                 throw ValidationException("email", "Invalid email format")
             }
         }
 
         // Validate new password if provided
-        updates.password?.let { newPassword ->
+        password?.let { newPassword ->
             if (!Validators.isValidPassword(newPassword)) {
                 throw ValidationException("password", "Password must be at least 8 characters with uppercase, lowercase, and digit")
             }
         }
 
         // Validate new name if provided
-        updates.name?.let { newName ->
+        name?.let { newName ->
             if (newName.isBlank()) {
                 throw ValidationException("name", "Name must not be blank")
             }
@@ -129,9 +131,9 @@ class UserService(
 
         // Build updated user
         val updatedUser = existingUser.copy(
-            email = updates.email ?: existingUser.email,
-            name = updates.name ?: existingUser.name,
-            passwordHash = updates.password?.let { HashUtils.hashPassword(it) } ?: existingUser.passwordHash
+            email = email ?: existingUser.email,
+            name = name ?: existingUser.name,
+            passwordHash = password?.let { HashUtils.hashPassword(it) } ?: existingUser.passwordHash
         )
 
         // Update and return
@@ -152,12 +154,3 @@ class UserService(
         return true
     }
 }
-
-/**
- * Data class for user update operations
- */
-data class UserUpdate(
-    val email: String? = null,
-    val name: String? = null,
-    val password: String? = null
-)

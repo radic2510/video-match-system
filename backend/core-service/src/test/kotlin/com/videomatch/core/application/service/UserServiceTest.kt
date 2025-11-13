@@ -250,14 +250,13 @@ class UserServiceTest {
             createdAt = Instant.now()
         )
 
-        val updates = UserUpdate(name = "New Name")
         val updatedUser = existingUser.copy(name = "New Name")
 
         coEvery { userRepository.findById(userId) } returns existingUser
         coEvery { userRepository.update(any()) } returns updatedUser
 
         // When
-        val result = userService.updateUser(userId, updates)
+        val result = userService.updateUser(userId, name = "New Name")
 
         // Then
         assertNotNull(result)
@@ -270,13 +269,12 @@ class UserServiceTest {
     fun `updateUser should throw ResourceNotFoundException when user not found`() = runBlocking {
         // Given
         val userId = UUID.randomUUID()
-        val updates = UserUpdate(name = "New Name")
 
         coEvery { userRepository.findById(userId) } returns null
 
         // When/Then
         assertThrows<ResourceNotFoundException> {
-            userService.updateUser(userId, updates)
+            userService.updateUser(userId, name = "New Name")
         }
         coVerify { userRepository.findById(userId) }
         coVerify(exactly = 0) { userRepository.update(any()) }
@@ -295,13 +293,11 @@ class UserServiceTest {
             createdAt = Instant.now()
         )
 
-        val updates = UserUpdate(email = "invalid-email")
-
         coEvery { userRepository.findById(userId) } returns existingUser
 
         // When/Then
         assertThrows<ValidationException> {
-            userService.updateUser(userId, updates)
+            userService.updateUser(userId, email = "invalid-email")
         }
         coVerify { userRepository.findById(userId) }
         coVerify(exactly = 0) { userRepository.update(any()) }
@@ -348,12 +344,3 @@ class UserServiceTest {
         coVerify(exactly = 0) { userRepository.delete(any()) }
     }
 }
-
-/**
- * Data class for user update operations
- */
-data class UserUpdate(
-    val email: String? = null,
-    val name: String? = null,
-    val password: String? = null
-)

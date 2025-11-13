@@ -97,6 +97,15 @@ data class CreateMatchRequest(
     val priority: Int = 50
 )
 
+/**
+ * Request DTO for updating user
+ */
+data class UserUpdateRequest(
+    val email: String? = null,
+    val name: String? = null,
+    val password: String? = null
+)
+
 // Mapper extension functions
 
 /**
