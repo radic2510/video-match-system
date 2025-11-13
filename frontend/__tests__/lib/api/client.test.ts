@@ -5,6 +5,11 @@ import { http, HttpResponse } from 'msw'
 describe('VideoMatchAPIClient', () => {
   let client: VideoMatchAPIClient
 
+  // Setup MSW server
+  beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }))
+  afterEach(() => server.resetHandlers())
+  afterAll(() => server.close())
+
   beforeEach(() => {
     client = new VideoMatchAPIClient('http://localhost:8080', true)
   })
