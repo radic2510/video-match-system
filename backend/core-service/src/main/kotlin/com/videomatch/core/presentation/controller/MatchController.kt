@@ -127,6 +127,22 @@ class MatchController(
     }
 
     /**
+     * Get all queued matches sorted by priority
+     * Internal use - for Processing Service
+     * TODO: Add service-to-service authentication
+     */
+    @GetMapping("/queue")
+    fun getQueuedMatches(): ResponseEntity<List<MatchDTO>> = runBlocking {
+        logger.debug { "Fetching queued matches" }
+
+        val queuedMatches = matchService.getQueuedMatches()
+        val dtos = queuedMatches.map { it.toDTO() }
+
+        logger.info { "Returning ${dtos.size} queued matches" }
+        ResponseEntity.ok(dtos)
+    }
+
+    /**
      * Update match status
      * Internal use - for Processing Service
      * TODO: Add service-to-service authentication
@@ -151,6 +167,43 @@ class MatchController(
         val updatedMatch = matchService.updateMatchStatus(id, status)
 
         logger.info { "Match status updated successfully: $id -> $status" }
+        ResponseEntity.ok(updatedMatch.toDTO())
+    }
+
+    /**
+     * Update match result with ML processing output
+     * Internal use - for Processing Service
+     * TODO: Add service-to-service authentication
+     */
+    @PutMapping("/{id}/result")
+    fun updateMatchResult(
+        @PathVariable id: UUID,
+        @RequestBody resultUpdate: Map<String, Any>
+    ): ResponseEntity<MatchDTO> = runBlocking {
+        logger.info { "Updating match result: $id" }
+
+        // Parse result from request
+        val matchedVideoId = UUID.fromString(resultUpdate["matchedVideoId"] as String)
+        val confidence = (resultUpdate["confidence"] as Number).toDouble()
+        val frame = (resultUpdate["frame"] as Number).toInt()
+        val timestamp = (resultUpdate["timestamp"] as Number).toDouble()
+
+        @Suppress("UNCHECKED_CAST")
+        val verificationScores = (resultUpdate["verificationScores"] as? Map<String, Any>)
+            ?.mapValues { (it.value as Number).toDouble() }
+            ?: emptyMap()
+
+        val result = com.videomatch.core.domain.model.MatchResult(
+            matchedVideoId = matchedVideoId,
+            confidence = confidence,
+            frame = frame,
+            timestamp = timestamp,
+            verificationScores = verificationScores
+        )
+
+        val updatedMatch = matchService.updateMatchResult(id, result)
+
+        logger.info { "Match result updated successfully: $id -> videoId=$matchedVideoId, confidence=$confidence" }
         ResponseEntity.ok(updatedMatch.toDTO())
     }
 }

@@ -19,6 +19,7 @@ import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.get
 import org.springframework.test.web.servlet.patch
 import org.springframework.test.web.servlet.post
+import org.springframework.test.web.servlet.put
 import java.time.Instant
 import java.util.UUID
 
@@ -284,6 +285,119 @@ class MatchControllerTest {
             content = objectMapper.writeValueAsString(statusRequest)
         }.andExpect {
             status { isBadRequest() }
+        }
+    }
+
+    @Test
+    fun `GET queue should return list of queued matches sorted by priority`() {
+        // Given
+        val queuedMatches = listOf(
+            testMatch.copy(priority = 100),
+            testMatch.copy(id = UUID.randomUUID(), priority = 50),
+            testMatch.copy(id = UUID.randomUUID(), priority = 10)
+        )
+        coEvery { matchService.getQueuedMatches() } returns queuedMatches
+
+        // When/Then
+        mockMvc.get("/api/matches/queue") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(3) }
+            jsonPath("$[0].priority") { value(100) }
+            jsonPath("$[1].priority") { value(50) }
+            jsonPath("$[2].priority") { value(10) }
+        }
+
+        coVerify { matchService.getQueuedMatches() }
+    }
+
+    @Test
+    fun `GET queue should return empty list when no matches queued`() {
+        // Given
+        coEvery { matchService.getQueuedMatches() } returns emptyList()
+
+        // When/Then
+        mockMvc.get("/api/matches/queue") {
+            contentType = MediaType.APPLICATION_JSON
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.length()") { value(0) }
+        }
+    }
+
+    @Test
+    fun `PUT update result should update match with result data`() {
+        // Given
+        val resultRequest = mapOf(
+            "matchedVideoId" to testVideoId.toString(),
+            "confidence" to 0.94,
+            "frame" to 234,
+            "timestamp" to 7.8,
+            "verificationScores" to mapOf(
+                "embedding" to 0.92,
+                "sift" to 0.95,
+                "color" to 0.88,
+                "text" to 0.91
+            )
+        )
+
+        val matchResult = MatchResult(
+            matchedVideoId = testVideoId,
+            confidence = 0.94,
+            frame = 234,
+            timestamp = 7.8,
+            verificationScores = mapOf(
+                "embedding" to 0.92,
+                "sift" to 0.95,
+                "color" to 0.88,
+                "text" to 0.91
+            )
+        )
+
+        val updatedMatch = testMatch.copy(
+            status = MatchStatus.COMPLETED,
+            result = matchResult
+        )
+
+        coEvery { matchService.updateMatchResult(testMatchId, any()) } returns updatedMatch
+
+        // When/Then
+        mockMvc.put("/api/matches/$testMatchId/result") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(resultRequest)
+        }.andExpect {
+            status { isOk() }
+            jsonPath("$.id") { value(testMatchId.toString()) }
+            jsonPath("$.status") { value("COMPLETED") }
+            jsonPath("$.result.matchedVideoId") { value(testVideoId.toString()) }
+            jsonPath("$.result.confidence") { value(0.94) }
+        }
+
+        coVerify { matchService.updateMatchResult(testMatchId, any()) }
+    }
+
+    @Test
+    fun `PUT update result should return 404 when match not found`() {
+        // Given
+        val nonExistentId = UUID.randomUUID()
+        val resultRequest = mapOf(
+            "matchedVideoId" to testVideoId.toString(),
+            "confidence" to 0.94,
+            "frame" to 234,
+            "timestamp" to 7.8,
+            "verificationScores" to emptyMap<String, Double>()
+        )
+
+        coEvery { matchService.updateMatchResult(nonExistentId, any()) } throws
+            ResourceNotFoundException("Match", nonExistentId.toString())
+
+        // When/Then
+        mockMvc.put("/api/matches/$nonExistentId/result") {
+            contentType = MediaType.APPLICATION_JSON
+            content = objectMapper.writeValueAsString(resultRequest)
+        }.andExpect {
+            status { isNotFound() }
         }
     }
 }
