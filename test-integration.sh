@@ -24,12 +24,12 @@ log_info() {
 
 log_success() {
     echo -e "${GREEN}[✓]${NC} $1" | tee -a "$RESULTS_FILE"
-    ((PASSED++))
+    PASSED=$((PASSED + 1))
 }
 
 log_error() {
     echo -e "${RED}[✗]${NC} $1" | tee -a "$RESULTS_FILE"
-    ((FAILED++))
+    FAILED=$((FAILED + 1))
 }
 
 log_warning() {
