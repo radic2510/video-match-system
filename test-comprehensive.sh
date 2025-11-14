@@ -638,7 +638,7 @@ echo ""
 log_section "SECTION 9: 데이터베이스 무결성 검증"
 
 log_test "9.1 데이터베이스 사용자 수 확인"
-user_count=$(docker-compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | tr -d ' ' || echo "")
+user_count=$(docker compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM users;" 2>/dev/null | tr -d ' ' || echo "")
 
 if [ -n "$user_count" ] && [ "$user_count" -gt 0 ]; then
     log_success "데이터베이스 사용자 수: $user_count"
@@ -647,7 +647,7 @@ else
 fi
 
 log_test "9.2 데이터베이스 매칭 수 확인"
-match_count=$(docker-compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM image_matches;" 2>/dev/null | tr -d ' ' || echo "")
+match_count=$(docker compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM image_matches;" 2>/dev/null | tr -d ' ' || echo "")
 
 if [ -n "$match_count" ]; then
     log_success "데이터베이스 매칭 수: $match_count"
@@ -656,7 +656,7 @@ else
 fi
 
 log_test "9.3 데이터베이스 광고 수 확인"
-ad_count=$(docker-compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM videos;" 2>/dev/null | tr -d ' ' || echo "")
+ad_count=$(docker compose exec -T postgres psql -U videomatch -d videomatch -t -c "SELECT COUNT(*) FROM videos;" 2>/dev/null | tr -d ' ' || echo "")
 
 if [ -n "$ad_count" ] && [ "$ad_count" -gt 0 ]; then
     log_success "데이터베이스 광고 수: $ad_count"
