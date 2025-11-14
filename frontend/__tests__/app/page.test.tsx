@@ -86,7 +86,8 @@ describe('HomePage', () => {
     it('should display upload form', () => {
       render(<HomePage />)
 
-      expect(screen.getByText(/upload image/i)).toBeInTheDocument()
+      // Check for upload button instead of text which may appear multiple times
+      expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument()
     })
 
     it('should redirect to results page after successful upload', async () => {

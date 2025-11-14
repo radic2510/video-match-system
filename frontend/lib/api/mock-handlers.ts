@@ -11,25 +11,28 @@ import type {
 const BASE_URL = 'http://localhost:8080/api/v1'
 
 export const handlers = [
-  // User registration
-  http.post(`${BASE_URL}/users/register`, async () => {
+  // User registration - with /v1 prefix
+  http.post(`${BASE_URL}/users/register`, async ({ request }) => {
+    const body = await request.json()
     return HttpResponse.json<User>({
       id: crypto.randomUUID(),
-      email: 'test@example.com',
-      name: 'Test User',
+      email: (body as any).email || 'test@example.com',
+      name: (body as any).name || 'Test User',
       role: 'USER',
       createdAt: new Date().toISOString(),
     })
   }),
 
-  // User login
-  http.post(`${BASE_URL}/users/login`, async () => {
+
+  // User login - with /v1 prefix
+  http.post(`${BASE_URL}/users/login`, async ({ request }) => {
+    const body = await request.json()
     return HttpResponse.json<LoginResponse>({
       token: 'mock-jwt-token-' + crypto.randomUUID(),
       expiresIn: 3600,
       user: {
         id: crypto.randomUUID(),
-        email: 'test@example.com',
+        email: (body as any).email || 'test@example.com',
         name: 'Test User',
         role: 'USER',
         createdAt: new Date().toISOString(),
@@ -37,9 +40,11 @@ export const handlers = [
     })
   }),
 
-  // Match creation (image upload)
+
+
+  // Match creation (image upload) - with /v1 prefix
   http.post(`${BASE_URL}/matches`, async () => {
-    await new Promise(resolve => setTimeout(resolve, 500))
+    await new Promise(resolve => setTimeout(resolve, 100))
 
     return HttpResponse.json<UploadResponse>({
       matchId: crypto.randomUUID(),
@@ -50,17 +55,18 @@ export const handlers = [
     })
   }),
 
-  // Get match result
+  // Get match result - with /v1 prefix (default for non-error test cases)
+  // This handler will be registered AFTER the test handlers, so test handlers take precedence
   http.get(`${BASE_URL}/matches/:id`, async ({ params }) => {
-    const { id } = params
+    const { id } = params as { id: string }
 
-    // Simulate different statuses
+    // Simulate different statuses based on ID
     const statuses = ['PROCESSING', 'COMPLETED'] as const
-    const status = statuses[Math.floor(Math.random() * statuses.length)]
+    const status = id === 'completed-match-id' ? 'COMPLETED' : statuses[Math.floor(Math.random() * statuses.length)]
 
     if (status === 'PROCESSING') {
       return HttpResponse.json<Match>({
-        matchId: id as string,
+        matchId: id,
         status: 'PROCESSING',
         progress: Math.floor(Math.random() * 100),
         currentStage: 'EMBEDDING_EXTRACTION',
@@ -69,7 +75,7 @@ export const handlers = [
     }
 
     return HttpResponse.json<Match>({
-      matchId: id as string,
+      matchId: id,
       status: 'COMPLETED',
       result: {
         matched: true,
@@ -101,7 +107,8 @@ export const handlers = [
     })
   }),
 
-  // List matches
+
+  // List matches - with /v1 prefix
   http.get(`${BASE_URL}/matches`, async () => {
     const mockMatches: Match[] = Array.from({ length: 5 }, (_, i) => ({
       matchId: crypto.randomUUID(),
@@ -140,7 +147,7 @@ export const handlers = [
     })
   }),
 
-  // List advertisements
+  // List advertisements - with /v1 prefix
   http.get(`${BASE_URL}/advertisements`, async () => {
     const mockAds: Advertisement[] = Array.from({ length: 10 }, (_, i) => ({
       id: crypto.randomUUID(),
@@ -175,7 +182,8 @@ export const handlers = [
     })
   }),
 
-  // Get single advertisement
+
+  // Get single advertisement - with /v1 prefix
   http.get(`${BASE_URL}/advertisements/:id`, async ({ params }) => {
     const { id } = params
 
@@ -202,7 +210,8 @@ export const handlers = [
     })
   }),
 
-  // Upload advertisement
+
+  // Upload advertisement - with /v1 prefix
   http.post(`${BASE_URL}/advertisements`, async () => {
     return HttpResponse.json<Advertisement>({
       id: crypto.randomUUID(),
@@ -214,4 +223,5 @@ export const handlers = [
       createdAt: new Date().toISOString(),
     })
   }),
+
 ]

@@ -27,10 +27,9 @@ describe('UploadForm', () => {
     it('should render the upload form with all elements', () => {
       render(<UploadForm />)
 
-      expect(screen.getByText(/upload image/i)).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument()
       expect(screen.getByLabelText(/select image/i)).toBeInTheDocument()
       expect(screen.getByLabelText(/priority/i)).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: /upload/i })).toBeInTheDocument()
     })
 
     it('should show drag and drop text', () => {
@@ -58,8 +57,12 @@ describe('UploadForm', () => {
 
       await user.upload(input, file)
 
-      expect(input.files).toHaveLength(1)
-      expect(input.files?.[0]).toBe(file)
+      // The file will be processed and added to selectedFiles state
+      // We can't directly check input.files in happy-dom, but we can verify the component responds
+      // by checking if the file name appears or if uploadImage was called
+      await waitFor(() => {
+        expect(screen.getByText(/test\.jpg/i)).toBeInTheDocument()
+      })
     })
 
     it('should show image preview after file selection', async () => {
@@ -72,7 +75,8 @@ describe('UploadForm', () => {
       await user.upload(input, file)
 
       await waitFor(() => {
-        expect(screen.getByAltText(/preview/i)).toBeInTheDocument()
+        // The component shows a preview image with the filename as alt text
+        expect(screen.getByAltText(/test\.jpg/i)).toBeInTheDocument()
       })
     })
 
@@ -99,16 +103,16 @@ describe('UploadForm', () => {
 
       await user.upload(input, file)
 
-      // Wait for preview to appear
+      // Wait for preview to appear (use filename as alt text)
       await waitFor(() => {
-        expect(screen.getByAltText(/preview/i)).toBeInTheDocument()
+        expect(screen.getByAltText(/test\.jpg/i)).toBeInTheDocument()
       })
 
       const clearButton = screen.getByRole('button', { name: /remove/i })
       await user.click(clearButton)
 
       await waitFor(() => {
-        expect(screen.queryByAltText(/preview/i)).not.toBeInTheDocument()
+        expect(screen.queryByAltText(/test\.jpg/i)).not.toBeInTheDocument()
         expect(screen.queryByText(/test\.jpg/i)).not.toBeInTheDocument()
       })
     })
