@@ -24,7 +24,8 @@ class QueueProcessor(
     private val coreServiceClient: CoreServiceClient,
     private val mlServiceClient: MLServiceClient,
     private val resourceMonitor: ResourceMonitor,
-    @Value("\${queue-processor.concurrent-processing:3}") private val maxConcurrent: Int
+    @Value("\${queue-processor.concurrent-processing:3}") private val maxConcurrent: Int,
+    @Value("\${resource-monitor.enabled:true}") private val resourceMonitorEnabled: Boolean
 ) {
 
     /**
@@ -35,8 +36,8 @@ class QueueProcessor(
     fun processQueue() = runBlocking {
         logger.debug { "Checking queue for matches to process" }
 
-        // Check if system is overloaded
-        if (resourceMonitor.isOverloaded()) {
+        // Check if system is overloaded (only if resource monitoring is enabled)
+        if (resourceMonitorEnabled && resourceMonitor.isOverloaded()) {
             logger.warn { "System overloaded, skipping queue processing" }
             return@runBlocking
         }
@@ -77,9 +78,19 @@ class QueueProcessor(
             // Update status to PROCESSING
             coreServiceClient.updateMatchStatus(matchId, "PROCESSING")
 
+            // Load image from disk
+            val uploadDir = java.nio.file.Paths.get(System.getProperty("user.home"), ".videomatch", "uploads")
+
+            // Find the image file with this hash (could have various extensions)
+            val imageFile = java.nio.file.Files.list(uploadDir)
+                .filter { it.fileName.toString().startsWith(imageHash) }
+                .findFirst()
+                .orElseThrow { IllegalStateException("Image file not found for hash: $imageHash") }
+
+            logger.debug { "Loading image from: $imageFile" }
+            val imageBytes = java.nio.file.Files.readAllBytes(imageFile)
+
             // Call ML service to match advertisement
-            // For now, we use a dummy image - in production this would load from storage
-            val imageBytes = "dummy-image-for-$imageHash".toByteArray()
             val mlResponse = mlServiceClient.matchAdvertisement(imageBytes, topK = 30)
 
             if (mlResponse.matched && mlResponse.bestMatch != null) {

@@ -21,6 +21,9 @@ class WebClientConfig {
     @Value("\${ml-service.timeout-seconds:30}")
     private val timeoutSeconds: Long = 30
 
+    @Value("\${ml-service.url}")
+    private lateinit var mlServiceUrl: String
+
     @Bean
     fun webClient(): WebClient {
         val httpClient = HttpClient.create()
@@ -32,6 +35,7 @@ class WebClientConfig {
             }
 
         return WebClient.builder()
+            .baseUrl(mlServiceUrl)
             .clientConnector(ReactorClientHttpConnector(httpClient))
             .build()
     }

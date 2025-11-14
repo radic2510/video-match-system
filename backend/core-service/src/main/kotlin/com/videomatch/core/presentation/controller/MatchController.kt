@@ -132,6 +132,33 @@ class MatchController(
     }
 
     /**
+     * Get all matches for the authenticated user
+     * Convenience endpoint that doesn't require userId in path
+     */
+    @GetMapping
+    fun getMyMatches(
+        @RequestHeader("X-User-Id", required = false) userId: String?
+    ): ResponseEntity<List<MatchDTO>> = runBlocking {
+        // Check authentication
+        if (userId == null) {
+            return@runBlocking ResponseEntity.status(HttpStatus.UNAUTHORIZED).build()
+        }
+
+        val userUUID = try {
+            UUID.fromString(userId)
+        } catch (e: IllegalArgumentException) {
+            return@runBlocking ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+        }
+
+        logger.debug { "Getting all matches for user: $userUUID" }
+
+        val matches = matchService.getUserMatches(userUUID)
+        val dtos = matches.map { it.toDTO() }
+
+        ResponseEntity.ok(dtos)
+    }
+
+    /**
      * Get match result by ID
      * Requires authentication - user must own the match
      */

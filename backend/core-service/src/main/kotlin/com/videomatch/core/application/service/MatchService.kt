@@ -138,7 +138,11 @@ class MatchService(
             ?: throw ResourceNotFoundException("Match", id.toString())
 
         // Update result
-        return matchRepository.updateResult(id, result)
+        matchRepository.updateResult(id, result)
+            ?: throw ResourceNotFoundException("Match", id.toString())
+
+        // Update status to COMPLETED after result is set
+        return matchRepository.updateStatus(id, MatchStatus.COMPLETED)
             ?: throw ResourceNotFoundException("Match", id.toString())
     }
 

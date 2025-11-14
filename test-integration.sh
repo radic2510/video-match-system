@@ -93,7 +93,14 @@ echo ""
 
 # 1. 서비스 헬스 체크
 log_info "=== 1단계: 서비스 헬스 체크 ==="
-check_service_health "PostgreSQL" "http://localhost:5432" || log_warning "PostgreSQL 직접 헬스 체크 불가 (정상일 수 있음)"
+log_info "Checking PostgreSQL health..."
+if docker ps 2>/dev/null | grep -q postgres; then
+    log_success "PostgreSQL is running (via Docker)"
+elif command -v pg_isready >/dev/null 2>&1 && pg_isready -h localhost -p 5432 > /dev/null 2>&1; then
+    log_success "PostgreSQL is healthy"
+else
+    log_warning "PostgreSQL 직접 헬스 체크 불가 (Core Service에서 검증됨)"
+fi
 check_service_health "Core Service" "http://localhost:8081/actuator/health" || log_warning "Core Service 헬스 체크 실패 (서비스가 실행 중일 수 있음)"
 check_service_health "Processing Service" "http://localhost:8082/actuator/health" || log_warning "Processing Service 헬스 체크 실패 (서비스가 실행 중일 수 있음)"
 check_service_health "API Gateway" "http://localhost:8080/actuator/health" || log_warning "API Gateway 헬스 체크 실패 (서비스가 실행 중일 수 있음)"
