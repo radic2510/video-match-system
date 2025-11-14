@@ -50,19 +50,17 @@ export const useAuthStore = create<AuthState>()(
       register: async (userData: RegisterRequest) => {
         set({ isLoading: true, error: null })
         try {
-          const user = await apiClient.register(userData)
+          await apiClient.register(userData)
 
           // After registration, automatically log in
-          await apiClient.login({
+          const loginResponse = await apiClient.login({
             email: userData.email,
             password: userData.password,
           })
 
-          const token = typeof window !== 'undefined' ? localStorage.getItem('auth_token') : null
-
           set({
-            user,
-            token,
+            user: loginResponse.user,
+            token: loginResponse.token,
             isAuthenticated: true,
             isLoading: false,
           })
