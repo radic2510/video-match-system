@@ -6,6 +6,7 @@ import com.videomatch.core.domain.model.Advertisement
 import com.videomatch.core.domain.model.AdvertisementStatus
 import com.videomatch.core.domain.repository.AdvertisementRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 /**
@@ -26,7 +27,8 @@ class AdvertisementService(
      * @return Created advertisement entity with PROCESSING status
      * @throws ValidationException if validation fails
      */
-    suspend fun createAdvertisement(
+    @Transactional
+    fun createAdvertisement(
         title: String,
         brandName: String,
         videoPath: String,
@@ -70,7 +72,7 @@ class AdvertisementService(
      * @param id Advertisement UUID
      * @return Advertisement entity if found, null otherwise
      */
-    suspend fun getAdvertisement(id: UUID): Advertisement? {
+    fun getAdvertisement(id: UUID): Advertisement? {
         return advertisementRepository.findById(id)
     }
 
@@ -79,7 +81,7 @@ class AdvertisementService(
      * @param brandName Optional brand name filter
      * @return List of advertisements
      */
-    suspend fun listAdvertisements(brandName: String? = null): List<Advertisement> {
+    fun listAdvertisements(brandName: String? = null): List<Advertisement> {
         return if (brandName != null) {
             advertisementRepository.findByBrandName(brandName)
         } else {
@@ -94,7 +96,8 @@ class AdvertisementService(
      * @return Updated advertisement entity
      * @throws ResourceNotFoundException if advertisement not found
      */
-    suspend fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement {
+    @Transactional
+    fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement {
         // Check if advertisement exists
         advertisementRepository.findById(id)
             ?: throw ResourceNotFoundException("Advertisement", id.toString())
@@ -109,7 +112,8 @@ class AdvertisementService(
      * @param id Advertisement UUID
      * @return true if advertisement was deleted, false if advertisement not found
      */
-    suspend fun deleteAdvertisement(id: UUID): Boolean {
+    @Transactional
+    fun deleteAdvertisement(id: UUID): Boolean {
         // Check if advertisement exists
         advertisementRepository.findById(id) ?: return false
 

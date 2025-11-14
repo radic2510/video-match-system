@@ -18,7 +18,7 @@ data class MatchDTO(
     val status: String,
     val result: MatchResultDTO?,
     val queuePosition: Int,
-    val priority: Int,
+    val priority: Double,
     val createdAt: Instant
 )
 

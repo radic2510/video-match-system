@@ -60,7 +60,7 @@ class QueueProcessorTest {
             status = "QUEUED",
             result = null,
             queuePosition = 1,
-            priority = 100,
+            priority = 100.0,
             createdAt = Instant.now()
         )
 
@@ -71,7 +71,7 @@ class QueueProcessorTest {
             status = "QUEUED",
             result = null,
             queuePosition = 2,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -161,7 +161,7 @@ class QueueProcessorTest {
                 status = "QUEUED",
                 result = null,
                 queuePosition = i,
-                priority = 100 - i,
+                priority = (100 - i).toDouble(),
                 createdAt = Instant.now()
             )
         }
@@ -202,7 +202,7 @@ class QueueProcessorTest {
             status = "QUEUED",
             result = null,
             queuePosition = 1,
-            priority = 100,
+            priority = 100.0,
             createdAt = Instant.now()
         )
 
@@ -233,7 +233,7 @@ class QueueProcessorTest {
             status = "QUEUED",
             result = null,
             queuePosition = 1,
-            priority = 100,
+            priority = 100.0,
             createdAt = Instant.now()
         )
 
@@ -270,7 +270,7 @@ class QueueProcessorTest {
             status = "QUEUED",
             result = null,
             queuePosition = 1,
-            priority = 100,
+            priority = 100.0,
             createdAt = Instant.now()
         )
 

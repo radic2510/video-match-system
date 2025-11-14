@@ -1,9 +1,9 @@
 package com.videomatch.core.domain.repository
 
+import com.videomatch.core.domain.converter.MatchResultConverter
 import com.videomatch.core.domain.model.Match
 import com.videomatch.core.domain.model.MatchResult
 import com.videomatch.core.domain.model.MatchStatus
-import com.videomatch.core.infrastructure.converter.MatchResultConverter
 import com.videomatch.core.infrastructure.repository.MatchRepositoryImpl
 import kotlinx.coroutines.runBlocking
 import org.junit.jupiter.api.AfterEach
@@ -66,7 +66,7 @@ class MatchRepositoryTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 5,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
 
@@ -89,7 +89,7 @@ class MatchRepositoryTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val savedMatch = matchRepository.save(match)
@@ -126,7 +126,7 @@ class MatchRepositoryTest {
             imageHash = "hash1",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val match2 = Match(
@@ -134,7 +134,7 @@ class MatchRepositoryTest {
             imageHash = "hash2",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
         val match3 = Match(
@@ -142,7 +142,7 @@ class MatchRepositoryTest {
             imageHash = "hash3",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -178,7 +178,7 @@ class MatchRepositoryTest {
             imageHash = "hash1",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val match2 = Match(
@@ -186,7 +186,7 @@ class MatchRepositoryTest {
             imageHash = "hash2",
             status = MatchStatus.QUEUED,
             queuePosition = 2,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
         val match3 = Match(
@@ -194,7 +194,7 @@ class MatchRepositoryTest {
             imageHash = "hash3",
             status = MatchStatus.PROCESSING,
             queuePosition = 0,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.now()
         )
 
@@ -218,7 +218,7 @@ class MatchRepositoryTest {
             imageHash = "test123",
             status = MatchStatus.QUEUED,
             queuePosition = 5,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
         val savedMatch = matchRepository.save(match)
@@ -253,7 +253,7 @@ class MatchRepositoryTest {
             status = MatchStatus.PROCESSING,
             result = null,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val savedMatch = matchRepository.save(match)
@@ -303,7 +303,7 @@ class MatchRepositoryTest {
             imageHash = "test123",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val savedMatch = matchRepository.save(match)
@@ -324,7 +324,7 @@ class MatchRepositoryTest {
             imageHash = "queued",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val processingMatch = Match(
@@ -332,7 +332,7 @@ class MatchRepositoryTest {
             imageHash = "processing",
             status = MatchStatus.PROCESSING,
             queuePosition = 0,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.now()
         )
         val completedMatch = Match(
@@ -340,7 +340,7 @@ class MatchRepositoryTest {
             imageHash = "completed",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val failedMatch = Match(
@@ -348,7 +348,7 @@ class MatchRepositoryTest {
             imageHash = "failed",
             status = MatchStatus.FAILED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -373,7 +373,7 @@ class MatchRepositoryTest {
             imageHash = "hash1",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val match2 = Match(
@@ -381,7 +381,7 @@ class MatchRepositoryTest {
             imageHash = "hash2",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
         matchRepository.save(match1)
@@ -402,7 +402,7 @@ class MatchRepositoryTest {
             imageHash = "test123",
             status = MatchStatus.PROCESSING,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
         val savedMatch = matchRepository.save(match)

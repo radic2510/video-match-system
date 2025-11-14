@@ -14,45 +14,45 @@ interface UserRepository {
      * @param user User entity to save
      * @return Saved user entity
      */
-    suspend fun save(user: User): User
+    fun save(user: User): User
 
     /**
      * Find a user by ID
      * @param id User ID
      * @return User if found, null otherwise
      */
-    suspend fun findById(id: UUID): User?
+    fun findById(id: UUID): User?
 
     /**
      * Find a user by email address
      * @param email User email
      * @return User if found, null otherwise
      */
-    suspend fun findByEmail(email: String): User?
+    fun findByEmail(email: String): User?
 
     /**
      * Check if a user exists by email
      * @param email User email
      * @return true if user exists, false otherwise
      */
-    suspend fun existsByEmail(email: String): Boolean
+    fun existsByEmail(email: String): Boolean
 
     /**
      * Update a user
      * @param user User entity with updated fields
      * @return Updated user entity
      */
-    suspend fun update(user: User): User
+    fun update(user: User): User
 
     /**
      * Delete a user by ID
      * @param id User ID
      */
-    suspend fun delete(id: UUID)
+    fun delete(id: UUID)
 
     /**
      * Find all users
      * @return List of all users
      */
-    suspend fun findAll(): List<User>
+    fun findAll(): List<User>
 }

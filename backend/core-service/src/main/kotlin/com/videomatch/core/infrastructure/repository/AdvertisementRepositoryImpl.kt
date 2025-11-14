@@ -19,19 +19,19 @@ class AdvertisementRepositoryImpl : AdvertisementRepository {
     private lateinit var entityManager: EntityManager
 
     @Transactional
-    override suspend fun save(advertisement: Advertisement): Advertisement {
+    override fun save(advertisement: Advertisement): Advertisement {
         entityManager.persist(advertisement)
         entityManager.flush()
         return advertisement
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findById(id: UUID): Advertisement? {
+    override fun findById(id: UUID): Advertisement? {
         return entityManager.find(Advertisement::class.java, id)
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findAll(): List<Advertisement> {
+    override fun findAll(): List<Advertisement> {
         val query = entityManager.createQuery(
             "SELECT a FROM Advertisement a",
             Advertisement::class.java
@@ -40,7 +40,7 @@ class AdvertisementRepositoryImpl : AdvertisementRepository {
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findByBrandName(brandName: String): List<Advertisement> {
+    override fun findByBrandName(brandName: String): List<Advertisement> {
         val query = entityManager.createQuery(
             "SELECT a FROM Advertisement a WHERE a.brandName = :brandName",
             Advertisement::class.java
@@ -50,14 +50,14 @@ class AdvertisementRepositoryImpl : AdvertisementRepository {
     }
 
     @Transactional
-    override suspend fun update(advertisement: Advertisement): Advertisement {
+    override fun update(advertisement: Advertisement): Advertisement {
         val merged = entityManager.merge(advertisement)
         entityManager.flush()
         return merged
     }
 
     @Transactional
-    override suspend fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement? {
+    override fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement? {
         val advertisement = entityManager.find(Advertisement::class.java, id) ?: return null
         val updated = advertisement.copy(status = status)
         val merged = entityManager.merge(updated)
@@ -66,7 +66,7 @@ class AdvertisementRepositoryImpl : AdvertisementRepository {
     }
 
     @Transactional
-    override suspend fun delete(id: UUID) {
+    override fun delete(id: UUID) {
         val advertisement = entityManager.find(Advertisement::class.java, id)
         if (advertisement != null) {
             entityManager.remove(advertisement)

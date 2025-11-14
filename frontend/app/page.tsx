@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { useAuthStore } from '@/stores/auth-store'
-import { useMatchStore } from '@/stores/match-store'
+import { useMatchStore, type BulkUploadResult } from '@/stores/match-store'
 import { UploadForm } from '@/components/upload-form'
+import { UploadResults } from '@/components/upload-results'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { LogOut, History } from 'lucide-react'
@@ -14,6 +15,7 @@ export default function HomePage() {
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuthStore()
   const { matches } = useMatchStore()
+  const [bulkUploadResults, setBulkUploadResults] = useState<BulkUploadResult[] | null>(null)
 
   // Redirect if not authenticated
   useEffect(() => {
@@ -28,8 +30,18 @@ export default function HomePage() {
   }
 
   const handleUploadSuccess = (matchId: string) => {
-    // Redirect to results page
+    // Redirect to results page for single upload
     router.push(`/results/${matchId}`)
+  }
+
+  const handleBulkUploadSuccess = (results: BulkUploadResult[]) => {
+    // Show results summary for bulk upload
+    setBulkUploadResults(results)
+  }
+
+  const handleUploadMore = () => {
+    // Reset to show upload form again
+    setBulkUploadResults(null)
   }
 
   const handleLogout = () => {
@@ -71,12 +83,17 @@ export default function HomePage() {
       {/* Main Content */}
       <main className="container py-8">
         <div className="grid gap-8">
-          {/* Upload Section */}
+          {/* Upload Section or Results */}
           <section>
-            <UploadForm onSuccess={handleUploadSuccess} />
+            {bulkUploadResults ? (
+              <UploadResults results={bulkUploadResults} onUploadMore={handleUploadMore} />
+            ) : (
+              <UploadForm onSuccess={handleUploadSuccess} onBulkSuccess={handleBulkUploadSuccess} />
+            )}
           </section>
 
-          {/* Recent Matches Section */}
+          {/* Recent Matches Section - only show when not displaying bulk results */}
+          {!bulkUploadResults && (
           <section>
             <Card>
               <CardHeader>
@@ -123,6 +140,7 @@ export default function HomePage() {
               </CardContent>
             </Card>
           </section>
+          )}
         </div>
       </main>
     </div>

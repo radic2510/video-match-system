@@ -50,7 +50,7 @@ data class AdvertisementDTO(
     val brandName: String,
     val videoPath: String,
     val uploadedAt: Instant,
-    val totalFrames: Int,
+    val totalFrames: Int?,
     val status: String
 )
 
@@ -74,7 +74,7 @@ data class MatchDTO(
     val status: String,
     val result: MatchResultDTO?,
     val queuePosition: Int,
-    val priority: Int,
+    val priority: Double,
     val createdAt: Instant
 )
 
@@ -94,7 +94,7 @@ data class MatchResultDTO(
  */
 data class CreateMatchRequest(
     val imageHash: String,
-    val priority: Int = 50
+    val priority: Double = 50.0
 )
 
 /**

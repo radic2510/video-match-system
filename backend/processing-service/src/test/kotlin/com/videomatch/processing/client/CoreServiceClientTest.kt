@@ -67,7 +67,7 @@ class CoreServiceClientTest {
             status = "QUEUED",
             result = null,
             queuePosition = 1,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.parse("2025-01-15T10:00:00Z")
         )
         val match2 = MatchDTO(
@@ -77,7 +77,7 @@ class CoreServiceClientTest {
             status = "QUEUED",
             result = null,
             queuePosition = 2,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.parse("2025-01-15T10:01:00Z")
         )
         val queuedMatches = listOf(match1, match2)
@@ -97,7 +97,7 @@ class CoreServiceClientTest {
         assertEquals(2, result.size)
         assertEquals(match1.id, result[0].id)
         assertEquals("QUEUED", result[0].status)
-        assertEquals(10, result[0].priority)
+        assertEquals(10.0, result[0].priority)
         assertEquals(match2.id, result[1].id)
 
         // Verify request
@@ -153,7 +153,7 @@ class CoreServiceClientTest {
             status = "PROCESSING",
             result = null,
             queuePosition = 0,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.parse("2025-01-15T10:00:00Z")
         )
 
@@ -189,7 +189,7 @@ class CoreServiceClientTest {
             status = "COMPLETED",
             result = null,
             queuePosition = 0,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.parse("2025-01-15T10:00:00Z")
         )
 
@@ -252,7 +252,7 @@ class CoreServiceClientTest {
             status = "COMPLETED",
             result = matchResult,
             queuePosition = 0,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.parse("2025-01-15T10:00:00Z")
         )
 

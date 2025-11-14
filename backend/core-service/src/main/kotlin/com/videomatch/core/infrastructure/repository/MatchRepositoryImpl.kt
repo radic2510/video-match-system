@@ -20,19 +20,19 @@ class MatchRepositoryImpl : MatchRepository {
     private lateinit var entityManager: EntityManager
 
     @Transactional
-    override suspend fun save(match: Match): Match {
+    override fun save(match: Match): Match {
         entityManager.persist(match)
         entityManager.flush()
         return match
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findById(id: UUID): Match? {
+    override fun findById(id: UUID): Match? {
         return entityManager.find(Match::class.java, id)
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findByUserId(userId: UUID): List<Match> {
+    override fun findByUserId(userId: UUID): List<Match> {
         val query = entityManager.createQuery(
             "SELECT m FROM Match m WHERE m.userId = :userId",
             Match::class.java
@@ -42,7 +42,7 @@ class MatchRepositoryImpl : MatchRepository {
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findByStatus(status: MatchStatus): List<Match> {
+    override fun findByStatus(status: MatchStatus): List<Match> {
         val query = entityManager.createQuery(
             "SELECT m FROM Match m WHERE m.status = :status",
             Match::class.java
@@ -52,7 +52,7 @@ class MatchRepositoryImpl : MatchRepository {
     }
 
     @Transactional
-    override suspend fun updateStatus(id: UUID, status: MatchStatus): Match? {
+    override fun updateStatus(id: UUID, status: MatchStatus): Match? {
         val match = entityManager.find(Match::class.java, id) ?: return null
         val updated = match.copy(status = status)
         val merged = entityManager.merge(updated)
@@ -61,7 +61,7 @@ class MatchRepositoryImpl : MatchRepository {
     }
 
     @Transactional
-    override suspend fun updateResult(id: UUID, result: MatchResult): Match? {
+    override fun updateResult(id: UUID, result: MatchResult): Match? {
         val match = entityManager.find(Match::class.java, id) ?: return null
         val updated = match.copy(result = result)
         val merged = entityManager.merge(updated)
@@ -70,7 +70,7 @@ class MatchRepositoryImpl : MatchRepository {
     }
 
     @Transactional
-    override suspend fun delete(id: UUID) {
+    override fun delete(id: UUID) {
         val match = entityManager.find(Match::class.java, id)
         if (match != null) {
             entityManager.remove(match)
@@ -79,7 +79,7 @@ class MatchRepositoryImpl : MatchRepository {
     }
 
     @Transactional(readOnly = true)
-    override suspend fun findAll(): List<Match> {
+    override fun findAll(): List<Match> {
         val query = entityManager.createQuery("SELECT m FROM Match m", Match::class.java)
         return query.resultList
     }

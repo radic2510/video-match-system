@@ -17,20 +17,17 @@ class UserRepositoryImpl : UserRepository {
     @PersistenceContext
     private lateinit var entityManager: EntityManager
 
-    @Transactional
-    override suspend fun save(user: User): User {
+    override fun save(user: User): User {
         entityManager.persist(user)
         entityManager.flush()
         return user
     }
 
-    @Transactional(readOnly = true)
-    override suspend fun findById(id: UUID): User? {
+    override fun findById(id: UUID): User? {
         return entityManager.find(User::class.java, id)
     }
 
-    @Transactional(readOnly = true)
-    override suspend fun findByEmail(email: String): User? {
+    override fun findByEmail(email: String): User? {
         val query = entityManager.createQuery(
             "SELECT u FROM User u WHERE u.email = :email",
             User::class.java
@@ -39,8 +36,7 @@ class UserRepositoryImpl : UserRepository {
         return query.resultList.firstOrNull()
     }
 
-    @Transactional(readOnly = true)
-    override suspend fun existsByEmail(email: String): Boolean {
+    override fun existsByEmail(email: String): Boolean {
         val query = entityManager.createQuery(
             "SELECT COUNT(u) FROM User u WHERE u.email = :email",
             Long::class.java
@@ -49,15 +45,13 @@ class UserRepositoryImpl : UserRepository {
         return query.singleResult > 0
     }
 
-    @Transactional
-    override suspend fun update(user: User): User {
+    override fun update(user: User): User {
         val merged = entityManager.merge(user)
         entityManager.flush()
         return merged
     }
 
-    @Transactional
-    override suspend fun delete(id: UUID) {
+    override fun delete(id: UUID) {
         val user = entityManager.find(User::class.java, id)
         if (user != null) {
             entityManager.remove(user)
@@ -65,8 +59,7 @@ class UserRepositoryImpl : UserRepository {
         }
     }
 
-    @Transactional(readOnly = true)
-    override suspend fun findAll(): List<User> {
+    override fun findAll(): List<User> {
         val query = entityManager.createQuery("SELECT u FROM User u", User::class.java)
         return query.resultList
     }

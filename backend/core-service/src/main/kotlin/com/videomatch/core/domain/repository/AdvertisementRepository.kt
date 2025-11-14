@@ -15,34 +15,34 @@ interface AdvertisementRepository {
      * @param advertisement Advertisement entity to save
      * @return Saved advertisement entity
      */
-    suspend fun save(advertisement: Advertisement): Advertisement
+    fun save(advertisement: Advertisement): Advertisement
 
     /**
      * Find an advertisement by ID
      * @param id Advertisement ID
      * @return Advertisement if found, null otherwise
      */
-    suspend fun findById(id: UUID): Advertisement?
+    fun findById(id: UUID): Advertisement?
 
     /**
      * Find all advertisements
      * @return List of all advertisements
      */
-    suspend fun findAll(): List<Advertisement>
+    fun findAll(): List<Advertisement>
 
     /**
      * Find advertisements by brand name
      * @param brandName Brand name to search for
      * @return List of advertisements matching the brand name
      */
-    suspend fun findByBrandName(brandName: String): List<Advertisement>
+    fun findByBrandName(brandName: String): List<Advertisement>
 
     /**
      * Update an advertisement
      * @param advertisement Advertisement entity with updated fields
      * @return Updated advertisement entity
      */
-    suspend fun update(advertisement: Advertisement): Advertisement
+    fun update(advertisement: Advertisement): Advertisement
 
     /**
      * Update advertisement status
@@ -50,11 +50,11 @@ interface AdvertisementRepository {
      * @param status New status
      * @return Updated advertisement if found, null otherwise
      */
-    suspend fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement?
+    fun updateStatus(id: UUID, status: AdvertisementStatus): Advertisement?
 
     /**
      * Delete an advertisement by ID
      * @param id Advertisement ID
      */
-    suspend fun delete(id: UUID)
+    fun delete(id: UUID)
 }

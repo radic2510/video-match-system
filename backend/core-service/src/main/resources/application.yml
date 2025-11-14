@@ -2,10 +2,16 @@ spring:
   application:
     name: core-service
 
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 10MB
+      max-request-size: 10MB
+
   datasource:
     url: jdbc:postgresql://localhost:5432/videomatch
     username: videomatch
-    password: videomatch
+    password: changeme123
     driver-class-name: org.postgresql.Driver
     hikari:
       maximum-pool-size: 20
@@ -17,7 +23,7 @@ spring:
   jpa:
     database-platform: org.hibernate.dialect.PostgreSQLDialect
     hibernate:
-      ddl-auto: validate
+      ddl-auto: none
     properties:
       hibernate:
         format_sql: true
@@ -32,7 +38,7 @@ spring:
     locations: classpath:db/migration
 
 server:
-  port: 8080
+  port: 8081
 
 jwt:
   secret: changeme-secret-key-for-development-must-be-at-least-256-bits
@@ -43,3 +49,12 @@ logging:
     com.videomatch: INFO
     org.springframework: INFO
     org.hibernate: WARN
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info
+  endpoint:
+    health:
+      show-details: always

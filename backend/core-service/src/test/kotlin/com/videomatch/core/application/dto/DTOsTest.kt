@@ -167,7 +167,7 @@ class DTOsTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 1,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -203,7 +203,7 @@ class DTOsTest {
             status = MatchStatus.COMPLETED,
             result = matchResult,
             queuePosition = 0,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -248,12 +248,12 @@ class DTOsTest {
         // Given/When
         val request = CreateMatchRequest(
             imageHash = "abc123def456",
-            priority = 50
+            priority = 50.0
         )
 
         // Then
         assertEquals("abc123def456", request.imageHash)
-        assertEquals(50, request.priority)
+        assertEquals(50.0, request.priority)
     }
 
     @Test
@@ -265,7 +265,7 @@ class DTOsTest {
 
         // Then
         assertEquals("abc123def456", request.imageHash)
-        assertEquals(50, request.priority) // Default priority
+        assertEquals(50.0, request.priority) // Default priority
     }
 
     // Test DTO immutability and data classes

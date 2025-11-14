@@ -42,7 +42,7 @@ class MatchServiceTest {
         // Given
         val userId = UUID.randomUUID()
         val imageHash = "abc123def456"
-        val priority = 50
+        val priority = 50.0
 
         val existingQueuedMatches = listOf(
             Match(
@@ -52,7 +52,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 1,
-                priority = 30,
+                priority = 30.0,
                 createdAt = Instant.now().minusSeconds(100)
             ),
             Match(
@@ -62,7 +62,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 2,
-                priority = 40,
+                priority = 40.0,
                 createdAt = Instant.now().minusSeconds(50)
             )
         )
@@ -99,7 +99,7 @@ class MatchServiceTest {
         // Given
         val userId = UUID.randomUUID()
         val imageHash = ""
-        val priority = 50
+        val priority = 50.0
 
         // When/Then
         val exception = assertThrows<ValidationException> {
@@ -114,7 +114,7 @@ class MatchServiceTest {
         // Given
         val userId = UUID.randomUUID()
         val imageHash = "abc123"
-        val priority = -1
+        val priority = -1.0
 
         // When/Then
         val exception = assertThrows<ValidationException> {
@@ -129,7 +129,7 @@ class MatchServiceTest {
         // Given
         val userId = UUID.randomUUID()
         val imageHash = "abc123"
-        val priority = 101
+        val priority = 101.0
 
         // When/Then
         val exception = assertThrows<ValidationException> {
@@ -144,7 +144,7 @@ class MatchServiceTest {
         // Given
         val userId = UUID.randomUUID()
         val imageHash = "abc123"
-        val priority = 50
+        val priority = 50.0
 
         val savedMatch = Match(
             id = UUID.randomUUID(),
@@ -181,7 +181,7 @@ class MatchServiceTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 1,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -223,7 +223,7 @@ class MatchServiceTest {
                 status = MatchStatus.COMPLETED,
                 result = null,
                 queuePosition = 0,
-                priority = 50,
+                priority = 50.0,
                 createdAt = Instant.now().minusSeconds(100)
             ),
             Match(
@@ -233,7 +233,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 1,
-                priority = 60,
+                priority = 60.0,
                 createdAt = Instant.now()
             )
         )
@@ -264,7 +264,7 @@ class MatchServiceTest {
             status = oldStatus,
             result = null,
             queuePosition = 1,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -318,7 +318,7 @@ class MatchServiceTest {
             status = MatchStatus.PROCESSING,
             result = null,
             queuePosition = 0,
-            priority = 50,
+            priority = 50.0,
             createdAt = Instant.now()
         )
 
@@ -371,7 +371,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 1,
-                priority = 80,
+                priority = 80.0,
                 createdAt = Instant.now().minusSeconds(100)
             ),
             Match(
@@ -381,7 +381,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 2,
-                priority = 60,
+                priority = 60.0,
                 createdAt = Instant.now().minusSeconds(50)
             ),
             Match(
@@ -391,7 +391,7 @@ class MatchServiceTest {
                 status = MatchStatus.QUEUED,
                 result = null,
                 queuePosition = 3,
-                priority = 60,
+                priority = 60.0,
                 createdAt = Instant.now().minusSeconds(30)
             )
         )

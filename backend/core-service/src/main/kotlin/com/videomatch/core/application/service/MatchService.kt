@@ -7,6 +7,7 @@ import com.videomatch.core.domain.model.MatchResult
 import com.videomatch.core.domain.model.MatchStatus
 import com.videomatch.core.domain.repository.MatchRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 /**
@@ -26,14 +27,15 @@ class MatchService(
      * @return Created match entity with QUEUED status
      * @throws ValidationException if validation fails
      */
-    suspend fun createMatch(userId: UUID, imageHash: String, priority: Int): Match {
+    @Transactional
+    fun createMatch(userId: UUID, imageHash: String, priority: Double): Match {
         // Validate image hash
         if (imageHash.isBlank()) {
             throw ValidationException("imageHash", "Image hash must not be blank")
         }
 
         // Validate priority (0-100)
-        if (priority !in 0..100) {
+        if (priority < 0.0 || priority > 100.0) {
             throw ValidationException("priority", "Priority must be between 0 and 100")
         }
 
@@ -63,7 +65,7 @@ class MatchService(
      * Calculate queue position based on priority and existing queue
      * Higher priority gets lower position number (processed first)
      */
-    private fun calculateQueuePosition(queuedMatches: List<Match>, priority: Int): Int {
+    private fun calculateQueuePosition(queuedMatches: List<Match>, priority: Double): Int {
         if (queuedMatches.isEmpty()) {
             return 1
         }
@@ -91,7 +93,7 @@ class MatchService(
      * @param id Match UUID
      * @return Match entity if found, null otherwise
      */
-    suspend fun getMatch(id: UUID): Match? {
+    fun getMatch(id: UUID): Match? {
         return matchRepository.findById(id)
     }
 
@@ -100,7 +102,7 @@ class MatchService(
      * @param userId User UUID
      * @return List of matches for the user
      */
-    suspend fun getUserMatches(userId: UUID): List<Match> {
+    fun getUserMatches(userId: UUID): List<Match> {
         return matchRepository.findByUserId(userId)
     }
 
@@ -111,7 +113,8 @@ class MatchService(
      * @return Updated match entity
      * @throws ResourceNotFoundException if match not found
      */
-    suspend fun updateMatchStatus(id: UUID, status: MatchStatus): Match {
+    @Transactional
+    fun updateMatchStatus(id: UUID, status: MatchStatus): Match {
         // Check if match exists
         matchRepository.findById(id)
             ?: throw ResourceNotFoundException("Match", id.toString())
@@ -128,7 +131,8 @@ class MatchService(
      * @return Updated match entity
      * @throws ResourceNotFoundException if match not found
      */
-    suspend fun updateMatchResult(id: UUID, result: MatchResult): Match {
+    @Transactional
+    fun updateMatchResult(id: UUID, result: MatchResult): Match {
         // Check if match exists
         matchRepository.findById(id)
             ?: throw ResourceNotFoundException("Match", id.toString())
@@ -143,7 +147,7 @@ class MatchService(
      * Used by processing service to get next matches to process
      * @return List of queued matches sorted by priority (descending) and timestamp (ascending)
      */
-    suspend fun getQueuedMatches(): List<Match> {
+    fun getQueuedMatches(): List<Match> {
         val queuedMatches = matchRepository.findByStatus(MatchStatus.QUEUED)
 
         // Sort by priority (descending) then by createdAt (ascending)

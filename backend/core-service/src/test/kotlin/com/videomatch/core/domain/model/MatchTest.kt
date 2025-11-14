@@ -28,7 +28,7 @@ class MatchTest {
             )
         )
         val queuePosition = 5
-        val priority = 8
+        val priority = 8.0
         val createdAt = Instant.now()
 
         // When
@@ -62,7 +62,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -78,7 +78,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -94,7 +94,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.PROCESSING,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -110,7 +110,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.COMPLETED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -126,7 +126,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.FAILED,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -143,7 +143,7 @@ class MatchTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -160,7 +160,7 @@ class MatchTest {
             status = MatchStatus.QUEUED,
             result = null,
             queuePosition = 5,
-            priority = 3,
+            priority = 3.0,
             createdAt = Instant.now()
         )
 
@@ -185,7 +185,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -204,7 +204,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5
+            priority = 5.0
         )
 
         // Then
@@ -221,12 +221,12 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 10,
+            priority = 10.0,
             createdAt = Instant.now()
         )
 
         // Then
-        assertEquals(10, match.priority)
+        assertEquals(10.0, match.priority)
     }
 
     @Test
@@ -237,7 +237,7 @@ class MatchTest {
             imageHash = "hash123",
             status = MatchStatus.PROCESSING,
             queuePosition = 0,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 
@@ -253,7 +253,7 @@ class MatchTest {
             imageHash = "validHash123",
             status = MatchStatus.QUEUED,
             queuePosition = 1,
-            priority = 5,
+            priority = 5.0,
             createdAt = Instant.now()
         )
 

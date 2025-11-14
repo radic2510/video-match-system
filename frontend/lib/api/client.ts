@@ -42,7 +42,7 @@ export class VideoMatchAPIClient {
     formData.append('image', file)
     formData.append('priority', priority)
 
-    return this.fetch<UploadResponse>('/api/v1/matches', {
+    return this.fetch<UploadResponse>('/api/matches', {
       method: 'POST',
       body: formData,
       headers: this.getAuthHeaders(),
@@ -53,7 +53,7 @@ export class VideoMatchAPIClient {
    * Get match result by ID
    */
   async getMatchResult(matchId: string): Promise<Match> {
-    return this.fetch<Match>(`/api/v1/matches/${matchId}`, {
+    return this.fetch<Match>(`/api/matches/${matchId}`, {
       headers: this.getAuthHeaders(),
     })
   }
@@ -67,7 +67,7 @@ export class VideoMatchAPIClient {
       size: size.toString(),
     })
 
-    return this.fetch<PageResponse<Match>>(`/api/v1/matches?${params}`, {
+    return this.fetch<PageResponse<Match>>(`/api/matches?${params}`, {
       headers: this.getAuthHeaders(),
     })
   }
@@ -76,7 +76,7 @@ export class VideoMatchAPIClient {
    * Login user
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
-    const data = await this.fetch<LoginResponse>('/api/v1/users/login', {
+    const data = await this.fetch<LoginResponse>('/api/users/login', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -96,7 +96,7 @@ export class VideoMatchAPIClient {
    * Register new user
    */
   async register(userData: RegisterRequest): Promise<User> {
-    return this.fetch<User>('/api/v1/users/register', {
+    return this.fetch<User>('/api/users/register', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export class VideoMatchAPIClient {
       size: size.toString(),
     })
 
-    return this.fetch<PageResponse<Advertisement>>(`/api/v1/advertisements?${params}`, {
+    return this.fetch<PageResponse<Advertisement>>(`/api/advertisements?${params}`, {
       headers: this.getAuthHeaders(),
     })
   }
@@ -132,7 +132,7 @@ export class VideoMatchAPIClient {
    * Get single advertisement
    */
   async getAdvertisement(id: string): Promise<Advertisement> {
-    return this.fetch<Advertisement>(`/api/v1/advertisements/${id}`, {
+    return this.fetch<Advertisement>(`/api/advertisements/${id}`, {
       headers: this.getAuthHeaders(),
     })
   }
@@ -150,7 +150,7 @@ export class VideoMatchAPIClient {
     formData.append('brandName', brandName)
     formData.append('campaignName', campaignName)
 
-    return this.fetch<Advertisement>('/api/v1/advertisements', {
+    return this.fetch<Advertisement>('/api/advertisements', {
       method: 'POST',
       body: formData,
       headers: this.getAuthHeaders(),

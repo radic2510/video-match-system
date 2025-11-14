@@ -11,7 +11,7 @@ def create_mock_yolo_model(output_path: str) -> None:
     Input: images [batch, 3, 640, 640]
     Output: predictions [batch, 84, 8400]
 
-    The model just returns random values for testing.
+    The model returns constant output with correct shape for testing.
     """
     # Define input
     input_tensor = helper.make_tensor_value_info("images", TensorProto.FLOAT, [1, 3, 640, 640])
@@ -19,24 +19,36 @@ def create_mock_yolo_model(output_path: str) -> None:
     # Define output (YOLOv8 format: 84 values = 4 bbox + 80 classes)
     output_tensor = helper.make_tensor_value_info("output0", TensorProto.FLOAT, [1, 84, 8400])
 
-    # Create a simple identity-like node (just for structure)
+    # Create a constant tensor for output (1, 84, 8400) filled with zeros
+    # This gives reasonable mock detections with low confidence
+    output_const = helper.make_tensor(
+        name="output0_value",
+        data_type=TensorProto.FLOAT,
+        dims=[1, 84, 8400],
+        vals=np.zeros((1, 84, 8400), dtype=np.float32).tobytes(),
+        raw=True
+    )
+
+    # Create a node that outputs the constant
     node = helper.make_node(
         "Identity",
-        inputs=["images"],
+        inputs=["output0_value"],
         outputs=["output0"],
     )
 
-    # Create graph
+    # Create graph with constant initializer
     graph = helper.make_graph(
         [node],
         "mock_yolo",
         [input_tensor],
         [output_tensor],
+        [output_const],
     )
 
     # Create model
     model = helper.make_model(graph, producer_name="test")
-    model.opset_import[0].version = 13
+    model.opset_import[0].version = 11
+    model.ir_version = 8  # Compatible with onnxruntime 1.20.0 (max IR version 11)
 
     # Save
     onnx.save(model, output_path)
@@ -51,11 +63,26 @@ def create_mock_clip_model(output_path: str) -> None:
     input_tensor = helper.make_tensor_value_info("image", TensorProto.FLOAT, [1, 3, 224, 224])
     output_tensor = helper.make_tensor_value_info("embedding", TensorProto.FLOAT, [1, 768])
 
-    node = helper.make_node("Identity", inputs=["image"], outputs=["embedding"])
+    # Create a constant tensor for output (1, 768) filled with random values
+    embedding_const = helper.make_tensor(
+        name="embedding_value",
+        data_type=TensorProto.FLOAT,
+        dims=[1, 768],
+        vals=np.ones((1, 768), dtype=np.float32).tobytes(),
+        raw=True
+    )
 
-    graph = helper.make_graph([node], "mock_clip", [input_tensor], [output_tensor])
+    # Create a node that outputs the constant
+    node = helper.make_node(
+        "Identity",
+        inputs=["embedding_value"],
+        outputs=["embedding"],
+    )
+
+    graph = helper.make_graph([node], "mock_clip", [input_tensor], [output_tensor], [embedding_const])
     model = helper.make_model(graph, producer_name="test")
-    model.opset_import[0].version = 13
+    model.opset_import[0].version = 11
+    model.ir_version = 8  # Compatible with onnxruntime 1.20.0 (max IR version 11)
 
     onnx.save(model, output_path)
 
@@ -65,11 +92,26 @@ def create_mock_dino_model(output_path: str) -> None:
     input_tensor = helper.make_tensor_value_info("image", TensorProto.FLOAT, [1, 3, 224, 224])
     output_tensor = helper.make_tensor_value_info("embedding", TensorProto.FLOAT, [1, 768])
 
-    node = helper.make_node("Identity", inputs=["image"], outputs=["embedding"])
+    # Create a constant tensor for output (1, 768) filled with random values
+    embedding_const = helper.make_tensor(
+        name="embedding_value",
+        data_type=TensorProto.FLOAT,
+        dims=[1, 768],
+        vals=np.ones((1, 768), dtype=np.float32).tobytes(),
+        raw=True
+    )
 
-    graph = helper.make_graph([node], "mock_dino", [input_tensor], [output_tensor])
+    # Create a node that outputs the constant
+    node = helper.make_node(
+        "Identity",
+        inputs=["embedding_value"],
+        outputs=["embedding"],
+    )
+
+    graph = helper.make_graph([node], "mock_dino", [input_tensor], [output_tensor], [embedding_const])
     model = helper.make_model(graph, producer_name="test")
-    model.opset_import[0].version = 13
+    model.opset_import[0].version = 11
+    model.ir_version = 8  # Compatible with onnxruntime 1.20.0 (max IR version 11)
 
     onnx.save(model, output_path)
 

@@ -11,6 +11,12 @@ import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.web.bind.annotation.*
+import org.springframework.web.multipart.MultipartFile
+import java.nio.file.Files
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+import java.security.MessageDigest
 import java.util.UUID
 
 private val logger = KotlinLogging.logger {}
@@ -30,10 +36,11 @@ class MatchController(
      * Requires authentication - user ID from JWT token
      * For now, we simulate authentication using X-User-Id header
      */
-    @PostMapping
+    @PostMapping(consumes = ["multipart/form-data"])
     fun createMatch(
         @RequestHeader("X-User-Id", required = false) userId: String?,
-        @Valid @RequestBody request: CreateMatchRequest
+        @RequestParam("image") imageFile: MultipartFile,
+        @RequestParam("priority", required = false, defaultValue = "normal") priorityStr: String
     ): ResponseEntity<MatchDTO> = runBlocking {
         // Check authentication
         if (userId == null) {
@@ -46,16 +53,82 @@ class MatchController(
             return@runBlocking ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
         }
 
-        logger.info { "Creating match for user: $userUUID" }
+        // Validate image file
+        if (imageFile.isEmpty) {
+            logger.warn { "Empty image file submitted by user: $userUUID" }
+            return@runBlocking ResponseEntity.status(HttpStatus.BAD_REQUEST).build()
+        }
 
-        val match = matchService.createMatch(
-            userId = userUUID,
-            imageHash = request.imageHash,
-            priority = request.priority
-        )
+        // Convert priority string to numeric value
+        val priority = convertPriorityToNumeric(priorityStr)
 
-        logger.info { "Match created successfully: ${match.id}, queue position: ${match.queuePosition}" }
-        ResponseEntity.status(HttpStatus.CREATED).body(match.toDTO())
+        logger.info { "Creating match for user: $userUUID with image: ${imageFile.originalFilename}, priority: $priorityStr ($priority)" }
+
+        try {
+            // Save image file to disk
+            val uploadDir = Paths.get(System.getProperty("user.home"), ".videomatch", "uploads")
+            Files.createDirectories(uploadDir)
+
+            // Generate unique filename using hash
+            val imageHash = calculateImageHash(imageFile.bytes)
+            val fileExtension = imageFile.originalFilename?.substringAfterLast('.', "") ?: "jpg"
+            val fileName = "${imageHash}.${fileExtension}"
+            val filePath = uploadDir.resolve(fileName)
+
+            // Save file
+            Files.copy(imageFile.inputStream, filePath, StandardCopyOption.REPLACE_EXISTING)
+            logger.debug { "Saved image to: $filePath" }
+
+            // Create match with image hash
+            val match = matchService.createMatch(
+                userId = userUUID,
+                imageHash = imageHash,
+                priority = priority
+            )
+
+            logger.info { "Match created successfully: ${match.id}, queue position: ${match.queuePosition}" }
+            ResponseEntity.status(HttpStatus.CREATED).body(match.toDTO())
+        } catch (e: Exception) {
+            logger.error(e) { "Error creating match for user: $userUUID" }
+            ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build()
+        }
+    }
+
+    /**
+     * Calculate SHA-256 hash of image bytes for unique identification
+     */
+    private fun calculateImageHash(bytes: ByteArray): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val hashBytes = digest.digest(bytes)
+        return hashBytes.joinToString("") { "%02x".format(it) }
+    }
+
+    /**
+     * Convert priority string (from frontend) to numeric value
+     * Supports: "normal" (50), "high" (75), or direct numeric values
+     */
+    private fun convertPriorityToNumeric(priorityStr: String): Double {
+        return when (priorityStr.lowercase()) {
+            "normal" -> 50.0
+            "high" -> 75.0
+            "low" -> 25.0
+            else -> {
+                // Try to parse as numeric value
+                try {
+                    val numericValue = priorityStr.toDouble()
+                    // Validate range
+                    if (numericValue < 0.0 || numericValue > 100.0) {
+                        logger.warn { "Priority value out of range: $numericValue, using default 50.0" }
+                        50.0
+                    } else {
+                        numericValue
+                    }
+                } catch (e: NumberFormatException) {
+                    logger.warn { "Invalid priority value: $priorityStr, using default 50.0" }
+                    50.0
+                }
+            }
+        }
     }
 
     /**

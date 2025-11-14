@@ -16,28 +16,28 @@ interface MatchRepository {
      * @param match Match entity to save
      * @return Saved match entity
      */
-    suspend fun save(match: Match): Match
+    fun save(match: Match): Match
 
     /**
      * Find a match by ID
      * @param id Match ID
      * @return Match if found, null otherwise
      */
-    suspend fun findById(id: UUID): Match?
+    fun findById(id: UUID): Match?
 
     /**
      * Find all matches for a specific user
      * @param userId User ID
      * @return List of matches for the user
      */
-    suspend fun findByUserId(userId: UUID): List<Match>
+    fun findByUserId(userId: UUID): List<Match>
 
     /**
      * Find matches by status
      * @param status Match status to filter by
      * @return List of matches with the specified status
      */
-    suspend fun findByStatus(status: MatchStatus): List<Match>
+    fun findByStatus(status: MatchStatus): List<Match>
 
     /**
      * Update match status
@@ -45,7 +45,7 @@ interface MatchRepository {
      * @param status New status
      * @return Updated match if found, null otherwise
      */
-    suspend fun updateStatus(id: UUID, status: MatchStatus): Match?
+    fun updateStatus(id: UUID, status: MatchStatus): Match?
 
     /**
      * Update match result
@@ -53,17 +53,17 @@ interface MatchRepository {
      * @param result Match result with confidence and verification scores
      * @return Updated match if found, null otherwise
      */
-    suspend fun updateResult(id: UUID, result: MatchResult): Match?
+    fun updateResult(id: UUID, result: MatchResult): Match?
 
     /**
      * Delete a match by ID
      * @param id Match ID
      */
-    suspend fun delete(id: UUID)
+    fun delete(id: UUID)
 
     /**
      * Find all matches
      * @return List of all matches
      */
-    suspend fun findAll(): List<Match>
+    fun findAll(): List<Match>
 }

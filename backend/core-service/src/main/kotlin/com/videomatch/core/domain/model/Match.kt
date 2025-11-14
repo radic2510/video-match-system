@@ -1,5 +1,6 @@
 package com.videomatch.core.domain.model
 
+import com.videomatch.core.domain.converter.MatchResultConverter
 import jakarta.persistence.*
 import java.time.Instant
 import java.util.UUID
@@ -44,22 +45,22 @@ data class Match(
     @Column(name = "user_id", nullable = false, columnDefinition = "uuid")
     val userId: UUID,
 
-    @Column(name = "image_hash", nullable = false, length = 64)
+    @Column(name = "image_hash", nullable = false)
     val imageHash: String,
 
     @Enumerated(EnumType.STRING)
     @Column(name = "status", nullable = false, length = 50)
     val status: MatchStatus = MatchStatus.QUEUED,
 
+    @Convert(converter = MatchResultConverter::class)
     @Column(name = "result", columnDefinition = "TEXT")
-    @Convert(converter = com.videomatch.core.infrastructure.converter.MatchResultConverter::class)
     val result: MatchResult? = null,
 
     @Column(name = "queue_position", nullable = false)
     val queuePosition: Int,
 
     @Column(name = "priority", nullable = false)
-    val priority: Int,
+    val priority: Double,
 
     @Column(name = "created_at", nullable = false)
     val createdAt: Instant = Instant.now()
@@ -67,6 +68,6 @@ data class Match(
     init {
         require(imageHash.isNotBlank()) { "Image hash must not be blank" }
         require(queuePosition >= 0) { "Queue position must be non-negative" }
-        require(priority >= 0) { "Priority must be non-negative" }
+        require(priority >= 0.0) { "Priority must be non-negative" }
     }
 }

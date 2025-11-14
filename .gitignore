@@ -40,3 +40,5 @@ Thumbs.db
 
 # personal files
 personal/
+sample/
+*.md

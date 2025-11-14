@@ -9,6 +9,7 @@ import com.videomatch.core.domain.model.User
 import com.videomatch.core.domain.model.UserRole
 import com.videomatch.core.domain.repository.UserRepository
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.util.UUID
 
 /**
@@ -28,7 +29,8 @@ class UserService(
      * @return Created user entity
      * @throws ValidationException if validation fails
      */
-    suspend fun registerUser(email: String, password: String, name: String): User {
+    @Transactional
+    fun registerUser(email: String, password: String, name: String): User {
         // Validate email
         if (!Validators.isValidEmail(email)) {
             throw ValidationException("email", "Invalid email format")
@@ -71,7 +73,7 @@ class UserService(
      * @return User entity if authentication successful
      * @throws UnauthorizedException if authentication fails
      */
-    suspend fun loginUser(email: String, password: String): User {
+    fun loginUser(email: String, password: String): User {
         // Find user by email
         val user = userRepository.findByEmail(email)
             ?: throw UnauthorizedException("Invalid email or password")
@@ -89,7 +91,7 @@ class UserService(
      * @param id User UUID
      * @return User entity if found, null otherwise
      */
-    suspend fun getUserById(id: UUID): User? {
+    fun getUserById(id: UUID): User? {
         return userRepository.findById(id)
     }
 
@@ -103,7 +105,8 @@ class UserService(
      * @throws ResourceNotFoundException if user not found
      * @throws ValidationException if validation fails
      */
-    suspend fun updateUser(id: UUID, email: String? = null, name: String? = null, password: String? = null): User {
+    @Transactional
+    fun updateUser(id: UUID, email: String? = null, name: String? = null, password: String? = null): User {
         // Find existing user
         val existingUser = userRepository.findById(id)
             ?: throw ResourceNotFoundException("User", id.toString())
@@ -145,7 +148,8 @@ class UserService(
      * @param id User UUID
      * @return true if user was deleted, false if user not found
      */
-    suspend fun deleteUser(id: UUID): Boolean {
+    @Transactional
+    fun deleteUser(id: UUID): Boolean {
         // Check if user exists
         userRepository.findById(id) ?: return false
 

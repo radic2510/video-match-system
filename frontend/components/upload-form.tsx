@@ -1,26 +1,35 @@
 'use client'
 
 import { useState, useRef, ChangeEvent, DragEvent, FormEvent } from 'react'
-import { useMatchStore } from '@/stores/match-store'
+import { useMatchStore, type BulkUploadResult } from '@/stores/match-store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { X, Upload, Image as ImageIcon } from 'lucide-react'
+import { Progress } from '@/components/ui/progress'
+import { X, Upload, Image as ImageIcon, Trash2 } from 'lucide-react'
 
 interface UploadFormProps {
   onSuccess?: (matchId: string) => void
+  onBulkSuccess?: (results: BulkUploadResult[]) => void
   onError?: (error: Error) => void
+  maxFiles?: number
 }
 
-export function UploadForm({ onSuccess, onError }: UploadFormProps) {
-  const { uploadImage, isUploading, error, clearError } = useMatchStore()
+interface FileWithPreview {
+  file: File
+  preview: string
+  id: string
+}
 
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
-  const [preview, setPreview] = useState<string | null>(null)
+export function UploadForm({ onSuccess, onBulkSuccess, onError, maxFiles = 20 }: UploadFormProps) {
+  const { uploadImage, uploadBulkImages, isUploading, error, clearError } = useMatchStore()
+
+  const [selectedFiles, setSelectedFiles] = useState<FileWithPreview[]>([])
   const [priority, setPriority] = useState<string>('normal')
   const [validationError, setValidationError] = useState<string | null>(null)
   const [isDragOver, setIsDragOver] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState<{ completed: number; total: number } | null>(null)
 
   const fileInputRef = useRef<HTMLInputElement>(null)
 
@@ -33,37 +42,63 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
     }
 
     if (file.size > MAX_FILE_SIZE) {
-      return 'File size must be less than 10 MB'
+      return `${file.name}: File size must be less than 10 MB`
     }
 
     return null
   }
 
-  const handleFileSelect = (file: File) => {
-    const error = validateFile(file)
+  const generateFileId = () => Math.random().toString(36).substring(2, 15)
 
-    if (error) {
-      setValidationError(error)
-      setSelectedFile(null)
-      setPreview(null)
+  const handleFilesSelect = (newFiles: File[]) => {
+    // Check max files limit
+    if (selectedFiles.length + newFiles.length > maxFiles) {
+      setValidationError(`Maximum ${maxFiles} images allowed per batch`)
       return
     }
 
-    setValidationError(null)
-    setSelectedFile(file)
+    const validFiles: FileWithPreview[] = []
+    const errors: string[] = []
 
-    // Create preview
-    const reader = new FileReader()
-    reader.onloadend = () => {
-      setPreview(reader.result as string)
+    newFiles.forEach((file) => {
+      const error = validateFile(file)
+      if (error) {
+        errors.push(error)
+      } else {
+        // Check for duplicates by name and size
+        const isDuplicate = selectedFiles.some(
+          (f) => f.file.name === file.name && f.file.size === file.size
+        )
+        if (!isDuplicate) {
+          // Create preview
+          const reader = new FileReader()
+          const fileId = generateFileId()
+          reader.onloadend = () => {
+            setSelectedFiles((prev) => [
+              ...prev,
+              { file, preview: reader.result as string, id: fileId },
+            ])
+          }
+          reader.readAsDataURL(file)
+        }
+      }
+    })
+
+    if (errors.length > 0) {
+      setValidationError(errors.join('; '))
+    } else {
+      setValidationError(null)
     }
-    reader.readAsDataURL(file)
   }
 
   const handleFileInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (file) {
-      handleFileSelect(file)
+    const files = Array.from(e.target.files || [])
+    if (files.length > 0) {
+      handleFilesSelect(files)
+    }
+    // Reset input value to allow selecting the same files again
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
     }
   }
 
@@ -81,40 +116,71 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
     e.preventDefault()
     setIsDragOver(false)
 
-    const file = e.dataTransfer.files?.[0]
-    if (file) {
-      handleFileSelect(file)
+    const files = Array.from(e.dataTransfer.files || [])
+    if (files.length > 0) {
+      handleFilesSelect(files)
     }
   }
 
-  const handleClearFile = () => {
-    setSelectedFile(null)
-    setPreview(null)
+  const handleRemoveFile = (fileId: string) => {
+    setSelectedFiles((prev) => prev.filter((f) => f.id !== fileId))
     setValidationError(null)
+  }
+
+  const handleClearAll = () => {
+    setSelectedFiles([])
+    setValidationError(null)
+    setUploadProgress(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
   }
 
+  const getTotalSize = () => {
+    return selectedFiles.reduce((sum, f) => sum + f.file.size, 0)
+  }
+
+  const formatBytes = (bytes: number) => {
+    if (bytes === 0) return '0 Bytes'
+    const k = 1024
+    const sizes = ['Bytes', 'KB', 'MB', 'GB']
+    const i = Math.floor(Math.log(bytes) / Math.log(k))
+    return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+  }
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
 
-    if (!selectedFile || validationError) {
+    if (selectedFiles.length === 0 || validationError) {
       return
     }
 
     try {
-      const response = await uploadImage(selectedFile, priority)
+      const files = selectedFiles.map((f) => f.file)
 
-      // Clear form on success
-      handleClearFile()
-      setPriority('normal')
-
-      if (onSuccess) {
-        onSuccess(response.matchId)
+      // Handle single file upload (backward compatibility)
+      if (files.length === 1) {
+        const response = await uploadImage(files[0], priority)
+        handleClearAll()
+        setPriority('normal')
+        if (onSuccess) {
+          onSuccess(response.matchId)
+        }
+      } else {
+        // Handle bulk upload
+        const results = await uploadBulkImages(files, priority, (completed, total) => {
+          setUploadProgress({ completed, total })
+        })
+        handleClearAll()
+        setPriority('normal')
+        setUploadProgress(null)
+        if (onBulkSuccess) {
+          onBulkSuccess(results)
+        }
       }
     } catch (err) {
       const error = err instanceof Error ? err : new Error('Upload failed')
+      setUploadProgress(null)
       if (onError) {
         onError(error)
       }
@@ -126,11 +192,11 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
+    <Card className="w-full max-w-4xl mx-auto">
       <CardHeader>
-        <CardTitle>Upload Image</CardTitle>
+        <CardTitle>Upload Images</CardTitle>
         <CardDescription>
-          Upload a photo of a display to match it with our advertisement database
+          Upload one or more photos of displays to match them with our advertisement database (max {maxFiles} images)
         </CardDescription>
       </CardHeader>
 
@@ -139,7 +205,7 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
           {/* File Upload Area */}
           <div>
             <label htmlFor="file-upload" className="sr-only">
-              Select image
+              Select images
             </label>
 
             <div
@@ -160,17 +226,18 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
                 onChange={handleFileInputChange}
                 disabled={isUploading}
                 className="sr-only"
-                aria-label="Select image"
+                aria-label="Select images"
+                multiple
               />
 
-              {!preview ? (
+              {selectedFiles.length === 0 ? (
                 <div className="space-y-4">
                   <div className="flex justify-center">
                     <ImageIcon className="h-12 w-12 text-muted-foreground" />
                   </div>
                   <div className="space-y-2">
                     <p className="text-sm text-muted-foreground">
-                      Drag and drop your image here
+                      Drag and drop your images here
                     </p>
                     <p className="text-xs text-muted-foreground">or</p>
                     <Button
@@ -184,33 +251,74 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
                     </Button>
                   </div>
                   <p className="text-xs text-muted-foreground">
-                    JPG or PNG, max 10MB
+                    JPG or PNG, max 10MB per file, up to {maxFiles} files
                   </p>
                 </div>
               ) : (
                 <div className="space-y-4">
-                  <div className="relative inline-block">
-                    <img
-                      src={preview}
-                      alt="Preview"
-                      className="max-h-64 rounded-lg"
-                    />
+                  {/* File Summary */}
+                  <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                    <div className="text-left">
+                      <p className="text-sm font-medium">
+                        {selectedFiles.length} file{selectedFiles.length !== 1 ? 's' : ''} selected
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Total size: {formatBytes(getTotalSize())}
+                      </p>
+                    </div>
                     <Button
                       type="button"
-                      variant="destructive"
-                      size="icon"
-                      className="absolute -top-2 -right-2"
-                      onClick={handleClearFile}
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearAll}
                       disabled={isUploading}
-                      aria-label="Remove file"
                     >
-                      <X className="h-4 w-4" />
+                      <Trash2 className="h-4 w-4 mr-2" />
+                      Clear All
                     </Button>
                   </div>
-                  <p className="text-sm font-medium">{selectedFile?.name}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {selectedFile && (selectedFile.size / 1024 / 1024).toFixed(2)} MB
-                  </p>
+
+                  {/* File Thumbnails Grid */}
+                  <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3 max-h-96 overflow-y-auto p-2">
+                    {selectedFiles.map((fileWithPreview) => (
+                      <div key={fileWithPreview.id} className="relative group">
+                        <div className="aspect-square relative overflow-hidden rounded-lg border bg-muted">
+                          <img
+                            src={fileWithPreview.preview}
+                            alt={fileWithPreview.file.name}
+                            className="object-cover w-full h-full"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="icon"
+                          className="absolute -top-2 -right-2 h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity"
+                          onClick={() => handleRemoveFile(fileWithPreview.id)}
+                          disabled={isUploading}
+                          aria-label={`Remove ${fileWithPreview.file.name}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                        <p className="mt-1 text-xs text-muted-foreground truncate" title={fileWithPreview.file.name}>
+                          {fileWithPreview.file.name}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Add More Button */}
+                  {selectedFiles.length < maxFiles && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => fileInputRef.current?.click()}
+                      disabled={isUploading}
+                    >
+                      Add more images ({selectedFiles.length}/{maxFiles})
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
@@ -241,6 +349,19 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
             </Alert>
           )}
 
+          {/* Upload Progress */}
+          {isUploading && uploadProgress && uploadProgress.total > 1 && (
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span>Uploading images...</span>
+                <span className="font-medium">
+                  {uploadProgress.completed} / {uploadProgress.total}
+                </span>
+              </div>
+              <Progress value={(uploadProgress.completed / uploadProgress.total) * 100} />
+            </div>
+          )}
+
           {/* Priority Selection */}
           <div className="space-y-2">
             <label
@@ -263,7 +384,9 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
               </SelectContent>
             </Select>
             <p className="text-xs text-muted-foreground">
-              High priority images are processed first
+              {selectedFiles.length > 1
+                ? 'Priority applies to all images in this batch'
+                : 'High priority images are processed first'}
             </p>
           </div>
 
@@ -271,17 +394,19 @@ export function UploadForm({ onSuccess, onError }: UploadFormProps) {
           <Button
             type="submit"
             className="w-full"
-            disabled={!selectedFile || !!validationError || isUploading}
+            disabled={selectedFiles.length === 0 || !!validationError || isUploading}
           >
             {isUploading ? (
               <>
-                <span className="mr-2">Uploading...</span>
+                <span className="mr-2">
+                  Uploading{uploadProgress && uploadProgress.total > 1 ? ` (${uploadProgress.completed}/${uploadProgress.total})` : ''}...
+                </span>
                 <span className="animate-spin">⏳</span>
               </>
             ) : (
               <>
                 <Upload className="mr-2 h-4 w-4" />
-                Upload
+                Upload {selectedFiles.length > 1 ? `${selectedFiles.length} Images` : 'Image'}
               </>
             )}
           </Button>
