@@ -6,6 +6,8 @@ import com.videomatch.common.exception.ValidationException
 import mu.KotlinLogging
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
+import org.springframework.http.converter.HttpMessageNotReadableException
+import org.springframework.web.bind.MethodArgumentNotValidException
 import org.springframework.web.bind.annotation.ExceptionHandler
 import org.springframework.web.bind.annotation.RestControllerAdvice
 import java.time.Instant
@@ -76,6 +78,41 @@ class GlobalExceptionHandler {
                     status = HttpStatus.BAD_REQUEST.value(),
                     error = "Bad Request",
                     message = ex.message ?: "Invalid argument"
+                )
+            )
+    }
+
+    @ExceptionHandler(HttpMessageNotReadableException::class)
+    fun handleHttpMessageNotReadableException(ex: HttpMessageNotReadableException): ResponseEntity<ErrorResponse> {
+        logger.warn { "Invalid JSON format: ${ex.message}" }
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    timestamp = Instant.now(),
+                    status = HttpStatus.BAD_REQUEST.value(),
+                    error = "Bad Request",
+                    message = "Invalid JSON format or malformed request body"
+                )
+            )
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException::class)
+    fun handleMethodArgumentNotValidException(ex: MethodArgumentNotValidException): ResponseEntity<ErrorResponse> {
+        val fieldError = ex.bindingResult.fieldErrors.firstOrNull()
+        val message = fieldError?.let { "${it.field}: ${it.defaultMessage}" }
+            ?: "Validation failed"
+
+        logger.warn { "Validation failed: $message" }
+        return ResponseEntity
+            .status(HttpStatus.BAD_REQUEST)
+            .body(
+                ErrorResponse(
+                    timestamp = Instant.now(),
+                    status = HttpStatus.BAD_REQUEST.value(),
+                    error = "Validation Error",
+                    message = message,
+                    field = fieldError?.field
                 )
             )
     }
